@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title }}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Inter Font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'], // override default
+          },
+        }
+      }
+    }
+  </script>
+
+<body class="bg-gray-100 relative z-10">
+<!-- Background only on edges -->
+<div class="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(#0001_1px,transparent_1px),linear-gradient(90deg,#0001_1px,transparent_1px),linear-gradient(115deg,#0001_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+
+</body>
+
+
+<div class="min-h-screen flex items-center justify-center relative">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden flex">
+
+        <!-- LEFT SECTION -->
+        <div class="w-full md:w-1/2 p-10">
+            <h1 class="text-xl font-semibold mb-10">PalmaCount</h1>
+
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
+            <p class="text-gray-600 mb-8">Welcome back! Please enter your details.</p>
+
+            <form action="{{ url_for('login') }}" method="POST" class="space-y-5">
+                
+                <!-- Email -->
+                <div>
+                    <label class="block text-gray-700 mb-1 font-medium">Email</label>
+                    <input type="email" name="email" placeholder="Enter your email" required
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2
+                               focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-gray-700 mb-1 font-medium">Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2
+                               focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                </div>
+
+                <!-- Remember + Forgot -->
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" class="h-4 w-4 rounded text-emerald-600">
+                        <span class="text-gray-600">Remember for 30 days</span>
+                    </label>
+                    <a href="#" class="text-emerald-600 hover:underline">Forgot password?</a>
+                </div>
+
+                <!-- Sign in button -->
+                <button type="submit"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 transition text-white
+                           font-semibold py-2 rounded-lg">
+                    Sign in
+                </button>
+
+                <!-- Google -->
+                <button type="button"
+                    class="w-full flex items-center justify-center gap-2 border border-gray-300
+                           py-2 rounded-lg hover:bg-gray-50 transition">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-4 h-4" />
+                    <span class="font-medium text-gray-700">Sign in with Google</span>
+                </button>
+
+                <p class="text-center text-gray-600 text-sm">
+                    Don’t have an account?
+                    <a href="/register" class="text-emerald-600 font-medium hover:underline">
+                        Sign up
+                    </a>
+                </p>
+            </form>
+        </div>
+
+        <!-- RIGHT SECTION (illustration) -->
+        <div class="hidden md:flex w-1/2 bg-[#F8F8FC] items-center justify-center">
+            <div class="relative">
+                <img src="static/images/palmaLogo.svg" class="w-60 h-60" />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-zinc-100 text-gray-700 py-20 mt-20 relative">
+  <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+    
+    <!-- Column 1: Logo -->
+    <div>
+      <h3 class="text-2xl font-bold text-gray-900 mb-2">PalmaCount</h3>
+      <p class="text-sm text-gray-500">There is no risk-free trading</p>
+    </div>
+
+    <!-- Column 2: Navigation -->
+    <div>
+      <h4 class="font-semibold mb-4">Navigation</h4>
+      <ul class="space-y-2 text-sm">
+        <li><a href="#" class="hover:text-gray-900">About</a></li>
+        <li><a href="#" class="hover:text-gray-900">Features</a></li>
+        <li><a href="#" class="hover:text-gray-900">Pricing</a></li>
+        <li><a href="#" class="hover:text-gray-900">Contact</a></li>
+        <li><a href="#" class="hover:text-gray-900">Blog</a></li>
+      </ul>
+    </div>
+
+    <!-- Column 3: Support -->
+    <div>
+      <h4 class="font-semibold mb-4">Support</h4>
+      <ul class="space-y-2 text-sm">
+        <li><a href="#" class="hover:text-gray-900">Documentation</a></li>
+        <li><a href="#" class="hover:text-gray-900">FAQ</a></li>
+        <li><a href="#" class="hover:text-gray-900">Support</a></li>
+      </ul>
+    </div>
+
+    <!-- Column 4: Social -->
+    <div>
+      <h4 class="font-semibold mb-4">Follow Us</h4>
+      <ul class="space-y-2 text-sm">
+        <li><a href="#" class="hover:text-gray-900">X (Twitter)</a></li>
+        <li><a href="#" class="hover:text-gray-900">LinkedIn</a></li>
+        <li><a href="#" class="hover:text-gray-900">YouTube</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Footer bottom -->
+  <div class="mt-12 border-t border-gray-200 pt-6 text-sm text-gray-400 text-center">
+    © 2025 PalmaCount. All rights reserved. &nbsp;
+    <a href="#" class="hover:text-gray-900">Privacy Policy</a> | 
+    <a href="#" class="hover:text-gray-900">Terms of Use</a>
+  </div>
+</footer>
+
+</head>
+

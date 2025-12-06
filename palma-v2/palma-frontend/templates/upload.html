@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block content %}
+{% set title = "Upload | PalmaCount" %}
+
+<div class="flex h-[90vh] items-center justify-center bg-neutral-100 px-10 py-12">
+
+  <!-- Upload + Preview Wrapper -->
+  <div class="flex items-start gap-10">
+
+    <!-- Upload Box -->
+    <div class="w-[500px] bg-white p-8 rounded-3xl shadow-lg border border-gray-200 space-y-6">
+      <form method="POST" enctype="multipart/form-data">
+
+        <!-- Dropzone -->
+        <label for="file-input"
+          class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-300 ease-in-out">
+          <div class="flex flex-col items-center space-y-3">
+            <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" stroke-width="1.5"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 16.5V19a2.5 2.5 0 0 0 2.5 2.5h13A2.5 2.5 0 0 0 21 19v-2.5M16 12l-4-4m0 0l-4 4m4-4v12" />
+            </svg>
+            <p class="text-gray-800 font-medium text-base">
+              Drop image here or <span class="text-green-600 underline">browse</span>
+            </p>
+            <p class="text-sm text-gray-500">PNG, JPG, or WEBP</p>
+          </div>
+          <input id="file-input" type="file" name="image" accept="image/*" class="hidden" required>
+        </label>
+
+        <!-- Submit -->
+        <button type="submit"
+          class="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-700 text-white text-lg font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 ease-in-out">
+          Analyze Image
+        </button>
+
+      </form>
+    </div>
+
+    <!-- Preview Box -->
+    <div id="preview-container"
+      class="w-64 hidden flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-200 shadow-md space-y-3">
+      <h2 class="text-gray-800 font-semibold text-base">Preview Image</h2>
+      <div class="relative w-full">
+        <img id="preview-img" src="" class="w-full h-64 object-cover rounded-xl border border-gray-200 shadow-sm" />
+        <button id="remove-btn"
+          class="absolute top-2 right-2 bg-white text-red-600 border border-red-300 px-2 py-1 rounded-full text-xs shadow-sm hover:bg-red-100 transition">
+          ✕
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Preview JavaScript -->
+<script>
+const fileInput = document.getElementById("file-input");
+const previewContainer = document.getElementById("preview-container");
+const previewImg = document.getElementById("preview-img");
+const removeBtn = document.getElementById("remove-btn");
+
+fileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      previewImg.src = event.target.result;
+      previewContainer.classList.remove("hidden");
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+removeBtn.addEventListener("click", () => {
+  fileInput.value = "";
+  previewImg.src = "";
+  previewContainer.classList.add("hidden");
+});
+</script>
+
+{% endblock %}
