@@ -83,7 +83,43 @@ def login():
 
 @app.route('/profile')
 def profile():
-    return render_template('profile.html')
+    if "user" not in session:
+        return redirect(url_for('login'))
+    
+    user = session['user']
+    user_id = user['localId']
+    
+    # Get user's analyses from database
+    user_analyses = Analysis.query.filter_by(user_id=user_id).all()
+    
+    # Calculate stats
+    total_scans = len(user_analyses)
+    total_trees_counted = sum(analysis.total_count for analysis in user_analyses)
+    
+    # Determine badge based on scans
+    if total_scans >= 50:
+        badge = "Palm Master 🌴"
+    elif total_scans >= 20:
+        badge = "Tree Expert 🌳"
+    elif total_scans >= 10:
+        badge = "Sapling Scout 🌱"
+    elif total_scans >= 5:
+        badge = "Seedling Starter 🌿"
+    else:
+        badge = "New Planter 🪴"
+    
+    # Prepare stats dictionary
+    stats = {
+        'total_scans': total_scans,
+        'total_trees_counted': total_trees_counted,
+        'account_type': 'Premium User' if total_scans > 10 else 'Free User',
+        'badge': badge,
+        'mature_total': sum(analysis.mature_count for analysis in user_analyses),
+        'young_total': sum(analysis.young_count for analysis in user_analyses),
+        'analyses': user_analyses[:5]  # Last 5 analyses for recent scans
+    }
+    
+    return render_template('profile.html', user=user, stats=stats)
 
 @app.route('/dashboard')
 def dashboard():
