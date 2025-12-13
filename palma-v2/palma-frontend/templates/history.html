@@ -1,0 +1,123 @@
+{% extends "layout.html" %}
+{% block content %}
+{% set title = "History | PalmaCount" %}
+
+<div class="min-h-screen bg-neutral-50 py-10 px-4">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-10">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-4xl font-bold text-green-800 mb-2">Analysis History</h1>
+          <p class="text-gray-600">View all your previous image analyses. Click on any card to see detailed results.</p>
+        </div>
+        <a href="{{ url_for('upload') }}" 
+           class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-700 text-white font-semibold rounded-xl shadow hover:shadow-lg transition duration-300 whitespace-nowrap">
+          + New Analysis
+        </a>
+      </div>
+      
+      <!-- Stats -->
+      {% if analyses %}
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <p class="text-sm text-gray-500 mb-1">Total Analyses</p>
+          <p class="text-3xl font-bold text-green-700">{{ analyses|length }}</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <p class="text-sm text-gray-500 mb-1">Most Recent</p>
+          <p class="text-lg font-semibold text-gray-800">
+            {{ analyses[0].created_at.strftime('%b %d, %Y') if analyses else 'N/A' }}
+          </p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <p class="text-sm text-gray-500 mb-1">Total Trees Counted</p>
+          <p class="text-3xl font-bold text-green-700">
+            {{ analyses|sum(attribute='total_count') if analyses else 0 }}
+          </p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if analyses %}
+      <!-- Analyses Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for analysis in analyses %}
+        <a href="{{ url_for('analysis_detail', analysis_id=analysis.analysis_id) }}" 
+           class="group bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+          
+          <!-- Image with timestamp overlay -->
+          <div class="h-48 overflow-hidden relative">
+            <img src="{{ url_for('static', filename='processed/' + analysis.processed_filename) }}" 
+                 alt="{{ analysis.original_filename }}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+            <div class="absolute top-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+              {{ analysis.created_at.strftime('%b %d') }}
+            </div>
+          </div>
+          
+          <!-- Content -->
+          <div class="p-5">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-gray-800 text-lg truncate mb-1">{{ analysis.original_filename }}</h3>
+                <p class="text-xs text-gray-500 truncate">{{ analysis.analysis_id }}</p>
+              </div>
+              <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full ml-2 flex-shrink-0">
+                {{ analysis.created_at.strftime('%I:%M %p') }}
+              </span>
+            </div>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-2 mt-4">
+              <div class="text-center p-2 bg-green-50 rounded-lg">
+                <p class="text-xs text-green-700 font-medium">Mature</p>
+                <p class="text-xl font-bold text-green-800">{{ analysis.mature_count }}</p>
+              </div>
+              <div class="text-center p-2 bg-blue-50 rounded-lg">
+                <p class="text-xs text-blue-700 font-medium">Young</p>
+                <p class="text-xl font-bold text-blue-800">{{ analysis.young_count }}</p>
+              </div>
+              <div class="text-center p-2 bg-emerald-100 rounded-lg">
+                <p class="text-xs text-emerald-900 font-medium">Total</p>
+                <p class="text-xl font-bold text-emerald-900">{{ analysis.total_count }}</p>
+              </div>
+            </div>
+            
+            <!-- View Button -->
+            <div class="mt-4 pt-4 border-t border-gray-100">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">View Details</span>
+                <span class="text-green-600 group-hover:text-green-800 transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      
+    {% else %}
+      <!-- Empty State -->
+      <div class="text-center py-20">
+        <div class="w-24 h-24 mx-auto mb-6 text-gray-300">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-semibold text-gray-700 mb-2">No analyses yet</h3>
+        <p class="text-gray-500 mb-8">Upload and analyze your first image to see it here.</p>
+        <a href="{{ url_for('upload') }}" 
+           class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-green-700 text-white font-semibold rounded-xl shadow hover:shadow-lg transition duration-300 inline-block">
+          Start Your First Analysis
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

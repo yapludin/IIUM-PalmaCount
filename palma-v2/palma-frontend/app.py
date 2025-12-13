@@ -1,16 +1,47 @@
-import os
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask_sqlalchemy import SQLAlchemy
+from firebase_config import auth
 import requests
 import base64
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from firebase_config import auth
+import os
+from datetime import datetime
+import uuid
 
 app = Flask(__name__)
 app.secret_key = "0102490139"
 
-# --- CLOUD CONFIGURATION ---
-# Default to localhost for testing, but check Environment Variable for Cloud URL
-# When you deploy to Render, you will set 'FASTAPI_URL' in the Render Dashboard
-FASTAPI_URL = os.environ.get("FASTAPI_URL", "http://127.0.0.1:8000/api/predict")
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///analyses.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['PROCESSED_FOLDER'] = 'static/processed'
+
+# Create directories if they don't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['PROCESSED_FOLDER'], exist_ok=True)
+
+db = SQLAlchemy(app)
+
+FASTAPI_URL = "http://127.0.0.1:8000/api/predict"
+
+# Database Model
+class Analysis(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    analysis_id = db.Column(db.String(50), unique=True, nullable=False)
+    user_id = db.Column(db.String(100), nullable=False)
+    original_filename = db.Column(db.String(200), nullable=False)
+    processed_filename = db.Column(db.String(200), nullable=False)
+    mature_count = db.Column(db.Integer, nullable=False)
+    young_count = db.Column(db.Integer, nullable=False)
+    total_count = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Analysis {self.analysis_id}>'
+
+# Create database tables
+with app.app_context():
+    db.create_all()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -20,22 +51,14 @@ def index():
     if request.method == "POST":
         file = request.files.get("image")
         if file:
-            try:
-                # Send image to FastAPI
-                response = requests.post(
-                    FASTAPI_URL,
-                    files={"image": (file.filename, file, file.content_type)}
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    result = data
-                    # Pass Base64 directly to template (No saving to disk!)
-                    image_base64 = data.get("image_base64")
-                else:
-                    flash(f"Error from AI Backend: {response.status_code}")
-            except requests.exceptions.ConnectionError:
-                flash("Could not connect to AI Backend. Is it running?")
+            response = requests.post(
+                FASTAPI_URL,
+                files={"image": (file.filename, file, file.content_type)}
+            )
+            if response.status_code == 200:
+                data = response.json()
+                result = data
+                image_base64 = data["image_base64"]
 
     return render_template("index.html", result=result, image_base64=image_base64)
 
@@ -51,6 +74,7 @@ def login():
             user = auth.sign_in_with_email_and_password(email, password)
             session['user'] = user
             return redirect(next_page or url_for('dashboard'))
+
         except:
             flash("Invalid credentials")
             return redirect('/login')
@@ -59,33 +83,13 @@ def login():
 
 @app.route('/profile')
 def profile():
-    if "user" not in session:
-        return redirect(url_for('login'))
-    
-    user = session["user"]
-    
-    # --- MOCK DATA (Replace with Database calls later) ---
-    # This simulates the "Activity Overview" & "User Statistics"
-    user_stats = {
-        "total_scans": 12,
-        "total_trees_counted": 1450,
-        "account_type": "Researcher",
-        "member_since": "Dec 2024",
-        "badge": "Forest Guardian"
-    }
-    
-    recent_history = [
-        {"id": 101, "date": "07 Dec 2025", "filename": "site_A_drone.jpg", "trees": 120, "status": "Completed"},
-        {"id": 102, "date": "06 Dec 2025", "filename": "gombak_sector_2.jpg", "trees": 85, "status": "Completed"},
-        {"id": 103, "date": "01 Dec 2025", "filename": "test_image_01.png", "trees": 0, "status": "Failed"},
-    ]
-    
-    return render_template('profile.html', user=user, stats=user_stats, history=recent_history)
+    return render_template('profile.html')
 
 @app.route('/dashboard')
 def dashboard():
     if "user" not in session:
         return redirect('/login')
+
     user = session["user"]
     return render_template('dashboard.html', user=user)
 
@@ -94,6 +98,7 @@ def register():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+
         try:
             user = auth.create_user_with_email_and_password(email, password)
             session['user'] = user
@@ -101,54 +106,115 @@ def register():
         except Exception as e:
             flash("Registration failed: " + str(e))
             return redirect('/register')
+
     return render_template('register.html')
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
+    if "user" not in session:
+        return redirect(url_for('login', next=url_for('upload')))
+    
     if request.method == 'POST':
-        if 'image' not in request.files:
-            return "No image uploaded", 400
-            
         file = request.files['image']
         
-        # Prepare files for request
-        # We send the file object directly to the backend
-        files_to_send = {'image': (file.filename, file, file.mimetype)}
+        # Generate unique IDs for this analysis
+        analysis_id = str(uuid.uuid4())[:8]
+        original_filename = file.filename
+        processed_filename = f"{analysis_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        
+        # Save original file temporarily
+        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{processed_filename}")
+        file.save(temp_path)
+        
+        # Send image to FastAPI
+        with open(temp_path, 'rb') as f:
+            files = {'image': (file.filename, f, file.mimetype)}
+            response = requests.post(FASTAPI_URL, files=files)
+        
+        # Remove temp file
+        os.remove(temp_path)
+        
+        data = response.json()
 
-        try:
-            response = requests.post(FASTAPI_URL, files=files_to_send)
+        if data["status"] == "success":
+            # Save processed image with unique name
+            image_data = base64.b64decode(data["image_base64"])
+            processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
+            with open(processed_path, "wb") as f:
+                f.write(image_data)
             
-            if response.status_code != 200:
-                 flash(f"Backend Error: {response.text}")
-                 return redirect(url_for('upload'))
-                 
-            data = response.json()
+            # Save analysis to database
+            new_analysis = Analysis(
+                analysis_id=analysis_id,
+                user_id=session['user']['localId'],
+                original_filename=original_filename,
+                processed_filename=processed_filename,
+                mature_count=data["total_mature"],
+                young_count=data["total_young"],
+                total_count=data["total_oil_palms"]
+            )
+            
+            db.session.add(new_analysis)
+            db.session.commit()
+            
+            # Store analysis_id in session for immediate viewing
+            session['last_analysis_id'] = analysis_id
+            
+            # Redirect to results page with analysis ID
+            return redirect(url_for('analysis_detail', analysis_id=analysis_id))
 
-            if data.get("status") == "success":
-                # --- CRITICAL FIX ---
-                # 1. We do NOT save to static/output.jpg (Cloud servers wipe this folder)
-                # 2. We pass the whole 'data' object so results.html can see the Charts & Areas
-                
-                return render_template(
-                    "results.html", 
-                    result=data, 
-                    image_base64=data.get("image_base64")
-                )
-
-        except Exception as e:
-            flash(f"Error processing image: {str(e)}")
-            return redirect(url_for('upload'))
+        return "Analysis failed", 500
 
     return render_template("upload.html")
 
 @app.route('/results')
 def results():
-    # This route is mostly for history, as the actual results are shown 
-    # immediately after the POST request in /upload
     if "user" not in session:
         return redirect(url_for('login'))
+
     user = session['user']
-    return render_template('results.html', user=user)
+    uploaded_file_name = session.get('uploaded_file_name')
+    
+    return render_template('results.html', user=user, uploaded_file_name=uploaded_file_name)
+
+@app.route('/analysis/<analysis_id>')
+def analysis_detail(analysis_id):
+    if "user" not in session:
+        return redirect(url_for('login'))
+    
+    # Get analysis from database
+    analysis = Analysis.query.filter_by(analysis_id=analysis_id, user_id=session['user']['localId']).first()
+    
+    if not analysis:
+        flash("Analysis not found")
+        return redirect(url_for('history'))
+    
+    totals = {
+        "mature": analysis.mature_count,
+        "young": analysis.young_count,
+        "total": analysis.total_count
+    }
+    
+    return render_template("analysis_detail.html", 
+                         totals=totals, 
+                         analysis=analysis,
+                         processed_image_url=url_for('static', filename=f'processed/{analysis.processed_filename}'))
+
+@app.route('/history')
+def history():
+    if "user" not in session:
+        return redirect(url_for('login'))
+    
+    # Get all analyses for current user, ordered by most recent first
+    analyses = Analysis.query.filter_by(user_id=session['user']['localId'])\
+                             .order_by(Analysis.created_at.desc())\
+                             .all()
+    
+    return render_template('history.html', analyses=analyses)
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 @app.route('/logout')
 def logout():
@@ -160,5 +226,4 @@ def inject_user():
     return dict(user=session.get("user"))
 
 if __name__ == "__main__":
-    # Gunicorn will handle the port in production, this is for local testing
     app.run(debug=True, port=5500)

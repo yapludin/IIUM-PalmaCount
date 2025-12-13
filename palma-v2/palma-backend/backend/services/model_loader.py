@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 
 # Load your trained YOLOv8 model
-model = YOLO("C:/Users/Isyraf Haziq/palma-v2/palma-backend/backend/models/best.pt")  # move your model to backend/models folder
+model = YOLO("C:/Users/Asus/OneDrive/Documents/UIA.DEGREE/SEM 7/FYP II/webflask/IIUM-PalmaCount/palma-v2/palma-backend/backend/models/best.pt")  # move your model to backend/models folder
 
 # Define your class names
 class_names = {
