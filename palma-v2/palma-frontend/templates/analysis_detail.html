@@ -1,0 +1,140 @@
+{% extends "layout.html" %}
+{% block content %}
+{% set title = "Analysis Details | PalmaCount" %}
+
+<div class="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 py-10 px-4">
+  <!-- Left Container -->
+  <div class="lg:w-1/3 w-full bg-white rounded-2xl shadow-xl border p-6 flex flex-col items-center overflow-auto">
+    <h1 class="text-3xl font-semibold text-green-800 mb-2">Analysis Result</h1>
+    <p class="text-gray-600 mb-1 text-center">ID: {{ analysis.analysis_id }}</p>
+    <p class="text-gray-500 mb-4 text-center text-sm">{{ analysis.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+
+    <!-- Image with zoom -->
+    <div class="relative w-full mb-4">
+      <img id="analyzedImage"
+        src="{{ processed_image_url }}"
+        alt="Detected Image"
+        class="w-full h-auto object-cover rounded-xl border shadow cursor-zoom-in" />
+      <div class="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+        Click to zoom
+      </div>
+    </div>
+
+    <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden cursor-zoom-out">
+      <img id="modalImage" src="{{ processed_image_url }}" class="max-w-full max-h-full shadow-xl rounded-lg" />
+    </div>
+
+    <div class="flex flex-wrap gap-3 justify-center w-full mt-4">
+      <a href="{{ url_for('upload') }}" class="flex-1 px-4 py-3 bg-green-600 text-white font-semibold rounded-xl shadow hover:bg-green-800 transition duration-300 text-center">
+        Analyze Another
+      </a>
+      <a href="{{ url_for('history') }}" class="flex-1 px-4 py-3 bg-gray-600 text-white font-semibold rounded-xl shadow hover:bg-gray-800 transition duration-300 text-center">
+        Back to History
+      </a>
+    </div>
+  </div>
+
+  <!-- Right Container -->
+  <div class="lg:w-2/3 w-full bg-white rounded-2xl shadow-xl border p-6 overflow-auto">
+    <div class="w-full flex items-center justify-between mb-8">
+      <div>
+        <p class="text-3xl font-bold text-green-800">Analysis Details</p>
+        <p class="text-gray-600 mt-1">File: {{ analysis.original_filename }}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-sm text-gray-500">Analyzed on</p>
+        <p class="font-medium text-gray-700">{{ analysis.created_at.strftime('%B %d, %Y') }}</p>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+      <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-md border border-green-100 p-6 hover:shadow-lg transition">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm text-green-800 font-medium">Mature Trees</p>
+          <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+            <span class="text-green-700 font-bold">🌴</span>
+          </div>
+        </div>
+        <p class="text-4xl font-bold text-green-700">{{ totals.mature }}</p>
+        <p class="text-xs text-green-600 mt-2">Fully grown oil palm trees</p>
+      </div>
+      
+      <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-md border border-blue-100 p-6 hover:shadow-lg transition">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm text-blue-800 font-medium">Young Trees</p>
+          <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+            <span class="text-blue-700 font-bold">🌱</span>
+          </div>
+        </div>
+        <p class="text-4xl font-bold text-blue-700">{{ totals.young }}</p>
+        <p class="text-xs text-blue-600 mt-2">Young/sapling oil palms</p>
+      </div>
+      
+      <div class="bg-gradient-to-br from-emerald-100 to-green-200 rounded-2xl shadow-md border border-emerald-200 p-6 hover:shadow-lg transition">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm text-emerald-900 font-medium">Total Trees</p>
+          <div class="w-8 h-8 bg-emerald-200 rounded-full flex items-center justify-center">
+            <span class="text-emerald-900 font-bold">📊</span>
+          </div>
+        </div>
+        <p class="text-4xl font-bold text-emerald-900">{{ totals.total }}</p>
+        <p class="text-xs text-emerald-800 mt-2">All detected oil palms</p>
+      </div>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+      <h3 class="font-semibold text-gray-800 mb-3">Analysis Information</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-gray-500">Analysis ID</p>
+          <p class="font-medium text-gray-800">{{ analysis.analysis_id }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Original File</p>
+          <p class="font-medium text-gray-800 truncate">{{ analysis.original_filename }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Date Analyzed</p>
+          <p class="font-medium text-gray-800">{{ analysis.created_at.strftime('%Y-%m-%d') }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Time Analyzed</p>
+          <p class="font-medium text-gray-800">{{ analysis.created_at.strftime('%I:%M %p') }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share/Download Options -->
+    <div class="mt-8 flex flex-wrap gap-3">
+      <button onclick="window.print()" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition duration-300">
+        📄 Print Report
+      </button>
+      <a href="{{ processed_image_url }}" download="palma_analysis_{{ analysis.analysis_id }}.jpg" class="px-5 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 font-medium rounded-xl hover:bg-blue-100 transition duration-300">
+        📥 Download Image
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('imageModal');
+  const analyzedImage = document.getElementById('analyzedImage');
+
+  if (analyzedImage) {
+    analyzedImage.addEventListener('click', () => modal.classList.remove('hidden'));
+  }
+  if (modal) {
+    modal.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+  
+  // Close modal with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      modal.classList.add('hidden');
+    }
+  });
+</script>
+
+{% endblock %}
