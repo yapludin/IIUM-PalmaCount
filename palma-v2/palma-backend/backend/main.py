@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers.predict import router as predict_router
+try:
+    from backend.routers.predict import router as predict_router
+except ImportError:
+    # Fallback for local running inside the folder
+    from routers.predict import router as predict_router
 
 app = FastAPI(
     title="PalmaCount Backend API",
