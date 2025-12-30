@@ -13,14 +13,48 @@ app = Flask(__name__)
 app.secret_key = "0102490139"
 
 # --- Configuration ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///analyses.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Default (Local) Configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///analyses.db'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['PROCESSED_FOLDER'] = 'static/processed'
 
-# Ensure directories exist
-os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'pfps'), exist_ok=True)
-os.makedirs(app.config['PROCESSED_FOLDER'], exist_ok=True)
+# --- RENDER PERSISTENCE LOGIC ---
+# If RENDER_DISK_PATH is set (e.g., /var/data), we use it for DB and Storage.
+render_disk = os.environ.get('RENDER_DISK_PATH')
+if render_disk:
+    print(f"--- MOUNTING PERSISTENT STORAGE: {render_disk} ---")
+    
+    # 1. Redirect Database to Disk
+    db_path = os.path.join(render_disk, 'analyses.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    print(f"Database Path: {db_path}")
+
+    # 2. Symlink 'static/uploads' -> '/var/data/uploads'
+    # This allows us to keep using url_for('static') while storing data on the disk.
+    target_uploads = os.path.join(render_disk, 'uploads')
+    link_uploads = os.path.join(app.root_path, 'static', 'uploads')
+    
+    # Ensure target directory exists on disk
+    os.makedirs(target_uploads, exist_ok=True)
+    os.makedirs(os.path.join(target_uploads, 'processed'), exist_ok=True)
+    os.makedirs(os.path.join(target_uploads, 'pfps'), exist_ok=True)
+
+    # Create Symlink
+    if os.path.islink(link_uploads):
+        os.remove(link_uploads) # Remove old link if exists
+    elif os.path.isdir(link_uploads):
+        import shutil
+        shutil.rmtree(link_uploads) # Remove ephemeral folder
+
+    os.symlink(target_uploads, link_uploads)
+    print(f"Symlinked: {link_uploads} -> {target_uploads}")
+
+# Ensure directories exist (Local fallback)
+if not render_disk:
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'pfps'), exist_ok=True)
+    os.makedirs(app.config['PROCESSED_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
 
