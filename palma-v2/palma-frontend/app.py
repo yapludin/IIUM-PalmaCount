@@ -171,10 +171,27 @@ def upload():
         
         with open(temp_path, 'rb') as f:
             files = {'image': (file.filename, f, file.mimetype)}
-            response = requests.post(FASTAPI_URL, files=files)
+            try:
+                response = requests.post(FASTAPI_URL, files=files, timeout=300) # Increased timeout
+            except requests.exceptions.RequestException as e:
+                flash(f"Backend Connection Error: {str(e)}", "danger")
+                return redirect(url_for('upload'))
         
         os.remove(temp_path)
-        data = response.json()
+        
+        # --- Debug Logging ---
+        print(f"Backend Status: {response.status_code}", flush=True)
+        if response.status_code != 200:
+            print(f"Backend Error Response: {response.text}", flush=True)
+            flash(f"Backend Error ({response.status_code}): {response.text[:100]}", "danger")
+            return redirect(url_for('upload'))
+
+        try:
+            data = response.json()
+        except ValueError:
+            print(f"Invalid JSON Response: {response.text}", flush=True)
+            flash("Backend returned invalid data. Check logs.", "danger")
+            return redirect(url_for('upload'))
 
         if data.get("status") == "success":
             # 1. Access the nested 'analysis' object from FastAPI
