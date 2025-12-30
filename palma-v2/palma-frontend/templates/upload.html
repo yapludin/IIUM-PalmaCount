@@ -1,81 +1,212 @@
 {% extends "layout.html" %}
+
 {% block content %}
 {% set title = "Upload | PalmaCount" %}
 
-<div class="flex h-[90vh] items-center justify-center bg-neutral-100 px-10 py-12">
+<div class="min-h-[90vh] bg-neutral-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto">
 
-  <!-- Upload + Preview Wrapper -->
-  <div class="flex items-start gap-10">
+    
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-    <!-- Upload Box -->
-    <div class="w-[500px] bg-white p-8 rounded-3xl shadow-lg border border-gray-200 space-y-6">
-      <form method="POST" enctype="multipart/form-data">
-
-        <!-- Dropzone -->
-        <label for="file-input"
-          class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-300 ease-in-out">
-          <div class="flex flex-col items-center space-y-3">
-            <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" stroke-width="1.5"
-              viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M3 16.5V19a2.5 2.5 0 0 0 2.5 2.5h13A2.5 2.5 0 0 0 21 19v-2.5M16 12l-4-4m0 0l-4 4m4-4v12" />
+      <div class="lg:col-span-1">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-8">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-green-600 mr-2">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 01-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 01-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 01-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584zM12 18a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd" />
             </svg>
-            <p class="text-gray-800 font-medium text-base">
-              Drop image here or <span class="text-green-600 underline">browse</span>
-            </p>
-            <p class="text-sm text-gray-500">PNG, JPG, or WEBP</p>
+            Image Guidelines
+          </h3>
+          <div class="relative mb-6 rounded-xl overflow-hidden border border-gray-200 group">
+            <img src="static\images\aereal-tree.jpg" alt="Good example" class="w-full h-48 object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+              <p class="text-white text-sm font-medium">Ideal: Clear Aerial View</p>
+            </div>
           </div>
-          <input id="file-input" type="file" name="image" accept="image/*" class="hidden" required>
-        </label>
-
-        <!-- Submit -->
-        <button type="submit"
-          class="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-700 text-white text-lg font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 ease-in-out">
-          Analyze Image
-        </button>
-
-      </form>
-    </div>
-
-    <!-- Preview Box -->
-    <div id="preview-container"
-      class="w-64 hidden flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-200 shadow-md space-y-3">
-      <h2 class="text-gray-800 font-semibold text-base">Preview Image</h2>
-      <div class="relative w-full">
-        <img id="preview-img" src="" class="w-full h-64 object-cover rounded-xl border border-gray-200 shadow-sm" />
-        <button id="remove-btn"
-          class="absolute top-2 right-2 bg-white text-red-600 border border-red-300 px-2 py-1 rounded-full text-xs shadow-sm hover:bg-red-100 transition">
-          ✕
-        </button>
+          <ul class="space-y-3 text-sm text-gray-600">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mt-1 mr-2"></i> <span>Direct top-down (nadir) perspective.</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mt-1 mr-2"></i> <span>Good lighting, minimal shadows.</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mt-1 mr-2"></i> <span>High resolution (PNG/JPG).</span>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
 
+      <div class="lg:col-span-2">
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+          <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Upload Image</h2>
+            <p class="text-gray-500 text-sm mt-1">Select an image to begin the palm counting analysis.</p>
+          </div>
+
+          <form method="POST" enctype="multipart/form-data">
+            
+            <div class="relative w-full h-80">
+                <input id="file-input" type="file" name="image" accept="image/*" class="hidden" required>
+
+                <label for="file-input" id="dropzone-label"
+                  class="absolute inset-0 flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50/50 transition-all duration-200 ease-in-out z-10">
+                  
+                  <div id="dropzone-content" class="flex flex-col items-center space-y-4 pointer-events-none">
+                    <div class="p-4 bg-white rounded-full shadow-sm border border-gray-100 transition" id="dropzone-icon">
+                       <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5V19a2.5 2.5 0 0 0 2.5 2.5h13A2.5 2.5 0 0 0 21 19v-2.5M16 12l-4-4m0 0l-4 4m4-4v12" />
+                      </svg>
+                    </div>
+                    <div class="text-center">
+                      <p class="text-gray-700 font-medium text-lg">Drag and drop your image</p>
+                      <p class="text-gray-500 text-sm mt-1">or <span class="text-green-700 underline font-medium">browse files</span></p>
+                    </div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider font-medium">PNG, JPG, or WEBP up to 10MB</p>
+                  </div>
+                </label>
+
+                <div id="preview-layer" class="absolute inset-0 z-20 hidden w-full h-full bg-white rounded-2xl border-2 border-green-500 overflow-hidden shadow-sm">
+                    <img id="preview-img" src="" class="w-full h-full object-contain bg-neutral-100" alt="Preview">
+                    <div class="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-black/20 to-transparent pointer-events-none"></div>
+                    
+                    <button type="button" id="remove-btn" class="absolute top-3 right-3 bg-white/90 hover:bg-red-50 text-gray-500 hover:text-red-600 p-2 rounded-xl shadow-sm border border-gray-200 backdrop-blur-sm transition-all duration-200 z-30">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    
+                    <div class="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-medium pointer-events-none">
+                        <span id="filename-display">image.jpg</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="analyze-btn"
+              class="w-full mt-6 py-3 px-4 rounded-xl bg-green-700 hover:bg-green-800 text-white text-base font-semibold shadow-sm transition-all duration-200 ease-in-out flex items-center justify-center opacity-50 cursor-not-allowed" disabled>
+              
+              Start Analysis
+            </button>
+          </form>
+
+          
+        </div>
+      </div> 
+      
+    </div> 
+    
   </div>
+
+  
 </div>
 
-<!-- Preview JavaScript -->
+
+
 <script>
 const fileInput = document.getElementById("file-input");
-const previewContainer = document.getElementById("preview-container");
+const dropzoneLabel = document.getElementById("dropzone-label");
+const previewLayer = document.getElementById("preview-layer");
 const previewImg = document.getElementById("preview-img");
 const removeBtn = document.getElementById("remove-btn");
+const analyzeBtn = document.getElementById("analyze-btn");
+const filenameDisplay = document.getElementById("filename-display");
+
+// --- DRAG AND DROP EVENTS ---
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+  dropzoneLabel.addEventListener(eventName, preventDefaults, false);
+  document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults (e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+// Highlight drop area when item is dragged over it
+['dragenter', 'dragover'].forEach(eventName => {
+  dropzoneLabel.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+  dropzoneLabel.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+  dropzoneLabel.classList.add('border-green-500', 'bg-green-50', 'scale-[1.01]');
+  dropzoneLabel.classList.remove('border-gray-300', 'bg-gray-50/50');
+}
+
+function unhighlight(e) {
+  dropzoneLabel.classList.remove('border-green-500', 'bg-green-50', 'scale-[1.01]');
+  dropzoneLabel.classList.add('border-gray-300', 'bg-gray-50/50');
+}
+
+// Handle dropped files
+dropzoneLabel.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+  const dt = e.dataTransfer;
+  const files = dt.files;
+
+  if (files.length > 0) {
+    fileInput.files = files; // Assign dropped files to input
+    handleFiles(files[0]);   // Trigger preview logic
+  }
+}
+
+// --- STANDARD FILE INPUT EVENTS ---
 
 fileInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      previewImg.src = event.target.result;
-      previewContainer.classList.remove("hidden");
-    };
-    reader.readAsDataURL(file);
+  if (fileInput.files.length > 0) {
+    handleFiles(fileInput.files[0]);
   }
 });
 
-removeBtn.addEventListener("click", () => {
+function handleFiles(file) {
+  // Validate Image Type
+  if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file.');
+      fileInput.value = '';
+      return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    previewImg.src = event.target.result;
+    filenameDisplay.textContent = file.name;
+    
+    // Show Preview
+    previewLayer.classList.remove("hidden");
+    toggleAnalyzeButton(true);
+  };
+  reader.readAsDataURL(file);
+}
+
+// --- BUTTON & UI UTILS ---
+
+const toggleAnalyzeButton = (isEnabled) => {
+  if (isEnabled) {
+    analyzeBtn.disabled = false;
+    analyzeBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    analyzeBtn.classList.add("hover:shadow-md", "hover:scale-[1.01]");
+  } else {
+    analyzeBtn.disabled = true;
+    analyzeBtn.classList.add("opacity-50", "cursor-not-allowed");
+    analyzeBtn.classList.remove("hover:shadow-md", "hover:scale-[1.01]");
+  }
+}
+
+removeBtn.addEventListener("click", (e) => {
+  e.preventDefault(); 
+  e.stopPropagation();
+
   fileInput.value = "";
   previewImg.src = "";
-  previewContainer.classList.add("hidden");
+  previewLayer.classList.add("hidden");
+  toggleAnalyzeButton(false);
 });
 </script>
 

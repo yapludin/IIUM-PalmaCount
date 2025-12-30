@@ -213,3 +213,4 @@ def run_inference(image_file):
         "image_base64": img_base64,
         "chart_base64": chart_base64
     }
+
