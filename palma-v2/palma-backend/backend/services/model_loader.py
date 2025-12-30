@@ -1,7 +1,17 @@
 from ultralytics import YOLO
 
 # Load your trained YOLOv8 model
-model = YOLO("C:/Users/Isyraf Haziq/palma-v2/palma-backend/backend/models/best.pt")  # move your model to backend/models folder
+import os
+
+# Load your trained YOLOv8 model - Use relative path for production compatibility
+# We assume the model is in 'models/best.pt' relative to this file's parent directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(current_dir, "..", "models", "best.pt")
+
+if not os.path.exists(model_path):
+    print(f"WARNING: Model not found at {model_path}. Please ensure 'best.pt' is in the 'backend/models' folder.")
+
+model = YOLO(model_path)
 
 # Define your class names
 class_names = {
