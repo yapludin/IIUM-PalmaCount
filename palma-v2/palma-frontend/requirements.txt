@@ -1,4 +1,4 @@
 flask
 gunicorn
 requests
-firebase-admin
+Flask-SQLAlchemy

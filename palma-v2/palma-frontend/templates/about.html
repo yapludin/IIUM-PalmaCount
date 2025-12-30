@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% block content %}
+{% set title = "About Us | PalmaCount" %}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<body class="bg-white relative z-10" style="font-family: 'Inter', sans-serif;">
+<div class="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(#0001_1px,transparent_1px),linear-gradient(90deg,#0001_1px,transparent_1px),linear-gradient(115deg,#0001_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+
+<section class="w-full px-10 pt-16 pb-10 relative text-center">
+    <div class="max-w-5xl mx-auto">
+        <p class="text-emerald-600 font-mono text-xs font-bold mb-6 uppercase tracking-[0.3em]">Project ID: 1532 SD</p>
+        
+        <h1 class="text-6xl md:text-8xl font-light tracking-tighter leading-none text-gray-900 mb-10">
+            Behind the Vision of <br />
+            <span class="font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-emerald-700">IIUM PalmaCount
+            </span>
+        </h1>
+        
+        <p class="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed font-light">
+            We are bridging the gap between traditional agriculture and deep learning technology to sustain Malaysia's palm oil industry.
+        </p>
+    </div>
+</section>
+
+<section class="w-full max-w-6xl mx-auto px-6 py-12 relative">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div class="space-y-6">
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest">The Vision</h2>
+            <p class="text-2xl text-gray-800 leading-snug font-medium">
+                Our technology serves as a <span class="text-emerald-600">digital alternative</span> to traditional on-ground surveys. 
+            </p>
+            <p class="text-gray-500 leading-relaxed">
+                By utilizing YOLOv8 deep learning, we help major organizations monitor tree health, age classification, and area estimation with significantly higher accuracy and lower operational costs.
+            </p>
+        </div>
+        
+        <div class="bg-gray-50 p-10 rounded-3xl border border-gray-100 shadow-sm">
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-8">Project Objectives</h2>
+            <ul class="space-y-6 text-gray-600 font-medium text-sm">
+                <li class="flex gap-4 items-start">
+                    <span class="flex-shrink-0 w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px]">1</span> 
+                    <span>Develop robust deep learning algorithms for automated tree counting.</span>
+                </li>
+                <li class="flex gap-4 items-start">
+                    <span class="flex-shrink-0 w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px]">2</span> 
+                    <span>Integrate high-resolution image analysis into a web-based platform.</span>
+                </li>
+                <li class="flex gap-4 items-start">
+                    <span class="flex-shrink-0 w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px]">3</span> 
+                    <span>Provide real-time data visualization for plantation sustainability.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+
+
+<section class="w-full max-w-7xl mx-auto px-6 pt-8 pb-16 relative">
+    <h2 class="text-5xl font-light text-center text-gray-900 mb-10 tracking-tight">Meet the Team</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <div class="bg-white/50 border border-gray-300 rounded-[2.5rem] p-10 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl transition-all duration-500 group">
+            <div class="relative w-36 h-36 mx-auto mb-8">
+                <div class="absolute inset-0 rounded-full border border-emerald-100 group-hover:border-emerald-400 transition-colors"></div>
+                <img src="{{ url_for('static', filename='images/muizzuddin.jpg') }}" class="p-1.5 w-full h-full rounded-full object-cover" />
+            </div>
+            <h4 class="text-2xl font-bold text-gray-900 tracking-tight">Ahmad Muizzuddin</h4>
+            <p class="text-emerald-500 font-bold text-[10px] uppercase tracking-widest mt-2">AI Model Specialist</p>
+            <p class="text-gray-400 text-sm mt-8 leading-relaxed font-light">
+                Responsible for the development and optimization of the YOLOv8 architecture for high-precision detection.
+            </p>
+        </div>
+
+        <div class="bg-white/50 border border-gray-300 rounded-[2.5rem] p-10 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl transition-all duration-500 group">
+            <div class="relative w-36 h-36 mx-auto mb-8">
+                <div class="absolute inset-0 rounded-full border border-emerald-100 group-hover:border-emerald-400 transition-colors"></div>
+                <img src="{{ url_for('static', filename='images/yap.jpeg') }}" class="p-1.5 w-full h-full rounded-full object-cover" />
+            </div>
+            <h4 class="text-2xl font-bold text-gray-900 tracking-tight">Isyraf Haziq</h4>
+            <p class="text-emerald-500 font-bold text-[10px] uppercase tracking-widest mt-2">Full-Stack Developer</p>
+            <p class="text-gray-400 text-sm mt-8 leading-relaxed font-light">
+                Lead developer for the PalmaCount ecosystem, managing backend integration and frontend architecture.
+            </p>
+        </div>
+
+        <div class="bg-white/50 border border-gray-300 rounded-[2.5rem] p-10 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl transition-all duration-500 group">
+            <div class="relative w-36 h-36 mx-auto mb-8">
+                <div class="absolute inset-0 rounded-full border-2 border-gray-900 shadow-lg"></div>
+                <img src="{{ url_for('static', filename='images/dr dini.jpg') }}" class="p-1 w-full h-full rounded-full object-cover" />
+            </div>
+            <h4 class="text-2xl font-bold text-gray-900 tracking-tight">Dr. Dini Oktarina</h4>
+            <p class="text-emerald-500 font-bold text-[10px] uppercase tracking-widest mt-2">Project Supervisor</p>
+            <p class="text-gray-400 text-sm mt-8 leading-relaxed font-light">
+                Providing technical oversight and guidance to ensure alignment with industrial and research standards.
+            </p>
+        </div>
+
+    </div>
+</section>
+
+<footer class="py-16 text-center text-gray-400 font-medium text-xs tracking-[0.3em] uppercase border-t border-gray-50">
+    &copy; 2025 IIUM PalmaCount | IIUM KICT
+</footer>
+
+</body>
+{% endblock %}

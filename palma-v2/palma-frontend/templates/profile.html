@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 
 {% block content %}
+<!-- Add Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 <div class="max-w-7xl mx-auto py-10 px-4">
     
     <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-100">
@@ -13,11 +16,15 @@
             </div>
             
             <div class="mt-4 md:mt-0 md:ml-6 text-center md:text-left flex-1">
-                <h1 class="text-3xl font-bold text-gray-800">{{ user.email.split('@')[0] }}</h1>
-                <div class="flex items-center justify-center md:justify-start text-gray-600 mt-1">
-                    <i class="fas fa-envelope mr-2"></i> {{ user.email }}
-                    <span class="mx-2">•</span>
-                    <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">{{ stats.account_type }}</span>
+                <h1 class="text-3xl font-bold text-gray-800">{{ user.email.split('@')[0] | title }}</h1>
+                <div class="flex items-center justify-center md:justify-start text-gray-600 mt-1 flex-wrap gap-2">
+                    <span class="flex items-center">
+                        <i class="fas fa-envelope mr-2 text-sm"></i> {{ user.email }}
+                    </span>
+                    <span class="mx-2 hidden md:inline">•</span>
+                    <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                        {{ stats.account_type }}
+                    </span>
                 </div>
             </div>
 
@@ -75,21 +82,45 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Additional Stats -->
+                    <div class="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Mature Trees</p>
+                            <p class="text-lg font-bold text-green-700">{{ stats.mature_total }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Young Trees</p>
+                            <p class="text-lg font-bold text-blue-700">{{ stats.young_total }}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">Security</h3>
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Quick Actions</h3>
                 <ul class="space-y-2">
                     <li>
-                        <button class="w-full text-left flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition group">
-                            <span class="text-gray-600 group-hover:text-green-700"><i class="fas fa-key w-6"></i> Change Password</span>
+                        <a href="{{ url_for('upload') }}" class="w-full text-left flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition group">
+                            <span class="text-gray-600 group-hover:text-green-700">
+                                <i class="fas fa-cloud-upload-alt w-6"></i> Upload New Image
+                            </span>
                             <i class="fas fa-chevron-right text-gray-300"></i>
-                        </button>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('history') }}" class="w-full text-left flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition group">
+                            <span class="text-gray-600 group-hover:text-green-700">
+                                <i class="fas fa-history w-6"></i> View History
+                            </span>
+                            <i class="fas fa-chevron-right text-gray-300"></i>
+                        </a>
                     </li>
                     <li>
                         <button class="w-full text-left flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition group">
-                            <span class="text-gray-600 group-hover:text-green-700"><i class="fas fa-shield-alt w-6"></i> 2FA Settings</span>
+                            <span class="text-gray-600 group-hover:text-green-700">
+                                <i class="fas fa-key w-6"></i> Change Password
+                            </span>
                             <i class="fas fa-chevron-right text-gray-300"></i>
                         </button>
                     </li>
@@ -116,12 +147,12 @@
                             <input type="email" value="{{ user.email }}" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition" readonly>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">University / Organization</label>
-                            <input type="text" value="IIUM Gombak" class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition">
+                            <label class="block text-sm font-medium text-gray-500 mb-1">Member Since</label>
+                            <input type="text" value="{{ stats.total_scans }} scans completed" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition" readonly>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Phone Number</label>
-                            <input type="text" placeholder="+60 12-345 6789" class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition">
+                            <label class="block text-sm font-medium text-gray-500 mb-1">Account Status</label>
+                            <input type="text" value="{{ stats.account_type }}" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition" readonly>
                         </div>
                     </div>
                     <div class="mt-6 text-right">
@@ -133,11 +164,72 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">Recent Scans</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Recent Scans</h3>
+                    <a href="{{ url_for('history') }}" class="text-sm text-green-600 font-medium hover:underline">View All</a>
+                </div>
                 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="
+                {% if stats.analyses %}
+                <div class="space-y-4">
+                    {% for analysis in stats.analyses %}
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                            <img src="{{ url_for('static', filename='processed/' + analysis.processed_filename) }}" 
+                                 alt="Scan" class="w-full h-full object-cover">
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <div class="flex justify-between items-center">
+                                <p class="font-medium text-gray-800 truncate">{{ analysis.original_filename }}</p>
+                                <span class="text-xs text-gray-500">{{ analysis.created_at.strftime('%b %d') }}</span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-600 mt-1">
+                                <span class="mr-3">
+                                    <i class="fas fa-tree text-green-600 mr-1"></i>
+                                    {{ analysis.total_count }} trees
+                                </span>
+                                <span>
+                                    <i class="fas fa-clock text-blue-600 mr-1"></i>
+                                    {{ analysis.created_at.strftime('%I:%M %p') }}
+                                </span>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('analysis_detail', analysis_id=analysis.analysis_id) }}" 
+                           class="ml-2 text-green-600 hover:text-green-800 transition">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <i class="fas fa-camera text-gray-300 text-4xl mb-3"></i>
+                    <p class="text-gray-500">No scans yet</p>
+                    <a href="{{ url_for('upload') }}" class="text-green-600 hover:text-green-800 font-medium mt-2 inline-block">
+                        Upload your first image →
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 
-                            {% endblock %}
+<style>
+    /* Custom scrollbar */
+    .overflow-x-auto::-webkit-scrollbar {
+        height: 6px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+</style>
+
+{% endblock %}
