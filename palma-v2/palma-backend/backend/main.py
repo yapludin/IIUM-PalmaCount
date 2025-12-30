@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-try:
-    from backend.routers.predict import router as predict_router
-except ImportError:
-    # Fallback for local running inside the folder
-    from routers.predict import router as predict_router
+import sys
+import os
+
+# Add the current directory to sys.path so we can import 'routers' directly
+# This fixes the issue on Render where the working directory is the parent folder
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from routers.predict import router as predict_router
 
 app = FastAPI(
     title="PalmaCount Backend API",
