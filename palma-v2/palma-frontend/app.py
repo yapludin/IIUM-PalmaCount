@@ -370,7 +370,27 @@ def profile():
             
         return redirect(url_for('profile'))
         
-    return render_template('profile.html', user=current_user)
+    # Calculate Stats
+    analyses_ref = db.collection('analyses')
+    query = analyses_ref.where('user_id', '==', current_user.id).stream()
+    
+    total_scans = 0
+    total_trees = 0
+    
+    for doc in query:
+        total_scans += 1
+        data = doc.to_dict()
+        # Handle both old 'tree_count' and new 'total_count' fields
+        total_trees += data.get('total_count', data.get('tree_count', 0))
+        
+    stats = {
+        'total_scans': total_scans,
+        'total_trees_counted': total_trees,
+        'badge': 'Veteran Planter' if total_scans > 10 else 'New Planter'
+    }
+
+    return render_template('profile.html', user=current_user, stats=stats)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(debug=True, host='0.0.0.0', port=port)
