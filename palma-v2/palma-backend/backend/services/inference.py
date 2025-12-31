@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from .model_loader import model, class_names
+from .model_loader import get_model, class_names # Use lazy loader
 
 # --- SERVER CONFIGURATION ---
 # Set Matplotlib to non-interactive mode.
@@ -187,8 +187,11 @@ def run_inference(image_file):
     import gc
 
     # Use no_grad to save memory (we are predicting, not training)
+    # Run inference with the loaded model
+    # Use the lazy loader here!
+    model = get_model()
     with torch.no_grad():
-        results = model.predict(img_array, verbose=False)
+        results = model(img_array, verbose=False)
     
     # Explicitly clear CUDA cache if available (though Render uses CPU)
     if torch.cuda.is_available():
