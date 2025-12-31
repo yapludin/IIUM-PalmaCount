@@ -3,3 +3,4 @@ pydantic
 requests
 werkzeug
 firebase-admin
+gunicorn
