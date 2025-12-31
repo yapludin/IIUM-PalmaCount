@@ -51,7 +51,7 @@
         <!-- Main Form Column -->
         <div class="lg:col-span-8 space-y-8 animate-fadeInUp" style="animation-delay: 0.1s;">
 
-            <form action="{{ url_for('update_profile') }}" method="POST" id="profile-form">
+            <form action="{{ url_for('profile') }}" method="POST" id="profile-form">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-lg font-bold text-gray-900">Personal Information</h3>
                     <button type="button" id="editBtn" onclick="toggleEditMode()"
@@ -65,7 +65,7 @@
                     <div class="group">
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Display
                             Name</label>
-                        <input type="text" name="full_name" value="{{ user.full_name or '' }}" readonly
+                        <input type="text" name="fullname" value="{{ user.fullname or '' }}" readonly
                             class="editable-input w-full bg-transparent border-b-2 border-gray-100 text-lg font-medium text-gray-900 py-2 focus:border-emerald-500 focus:outline-none transition-colors placeholder-gray-300"
                             placeholder="Enter your full name">
                     </div>
@@ -88,7 +88,7 @@
                                 <i class="fas fa-lock"></i> Security
                             </h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input type="password" name="new_password" placeholder="New Password" disabled
+                                <input type="password" name="password" placeholder="New Password" disabled
                                     class="bg-white border-0 ring-1 ring-red-100 text-red-900 placeholder-red-300 text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-red-500 transition-shadow">
                                 <input type="password" name="confirm_password" placeholder="Confirm Password" disabled
                                     class="bg-white border-0 ring-1 ring-red-100 text-red-900 placeholder-red-300 text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-red-500 transition-shadow">

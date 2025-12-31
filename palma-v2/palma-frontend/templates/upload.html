@@ -49,10 +49,10 @@
             <p class="text-gray-500 text-sm mt-1">Select an image to begin the palm counting analysis.</p>
           </div>
 
-          <form method="POST" enctype="multipart/form-data">
+          <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
 
             <div class="relative w-full h-80">
-              <input id="file-input" type="file" name="image" accept="image/*" class="hidden" required>
+              <input id="file-input" type="file" name="file" accept="image/*" class="hidden" required>
 
               <label for="file-input" id="dropzone-label"
                 class="absolute inset-0 flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50/50 transition-all duration-200 ease-in-out z-10">
