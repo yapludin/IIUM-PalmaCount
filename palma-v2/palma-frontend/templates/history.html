@@ -106,7 +106,7 @@
           </div>
           <div class="z-10">
             <p class="text-xs font-bold text-emerald-700/60 uppercase tracking-widest mb-0.5">Trees Identified</p>
-            <p class="text-3xl font-black text-emerald-800">{{ analyses|sum(attribute='total_count') }}</p>
+            <p class="text-3xl font-black text-emerald-800">{{ analyses|sum(attribute='tree_count') }}</p>
           </div>
         </div>
 
@@ -200,7 +200,7 @@
 
               <div class="text-right">
                 <span class="block text-[10px] font-bold text-emerald-600 uppercase mb-0.5">Total Palms</span>
-                <span class="block text-2xl font-black text-gray-900 leading-none">{{ analysis.total_count }}</span>
+                <span class="block text-2xl font-black text-gray-900 leading-none">{{ analysis.tree_count }}</span>
               </div>
             </div>
 
