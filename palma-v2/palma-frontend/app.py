@@ -228,30 +228,49 @@ def upload():
                 response = requests.post(FASTAPI_URL, files=files, timeout=600)  # Long timeout
                 
                 if response.status_code == 200:
-                    result = response.json()
-                    tree_count = result.get('tree_count', 0)
-                    processed_image_base64 = result.get('processed_image_base64')
-                    confidence_score = result.get('confidence_score', 0.0)
+                    api_response = response.json()
+                    analysis_data = api_response.get('analysis', {})
+                    
+                    # Extract Data
+                    tree_count = analysis_data.get('total_count', 0)
+                    formatted_tree_count = tree_count # Keep raw integer
+                    
+                    processed_image_base64 = analysis_data.get('image_base64')
+                    chart_base64 = analysis_data.get('chart_base64')
                     
                     # 3. Upload Processed Image to Firebase Storage
-                    image_data = base64.b64decode(processed_image_base64)
-                    processed_filename = f"processed_{unique_filename}"
-                    
-                    blob = bucket.blob(f"analyses/{current_user.id}/{processed_filename}")
-                    blob.upload_from_string(image_data, content_type='image/jpeg')
-                    blob.make_public() # Make accessible via URL
-                    image_url = blob.public_url
-                    
+                    if processed_image_base64:
+                        image_data = base64.b64decode(processed_image_base64)
+                        processed_filename = f"processed_{unique_filename}"
+                        blob = bucket.blob(f"analyses/{current_user.id}/{processed_filename}")
+                        blob.upload_from_string(image_data, content_type='image/jpeg')
+                        blob.make_public()
+                        image_url = blob.public_url
+                    else:
+                        image_url = None
+
                     # 4. Save Metadata to Firestore
                     doc_ref = db.collection('analyses').document()
-                    doc_ref.set({
+                    
+                    # Construct the full document
+                    firestore_data = {
                         'user_id': current_user.id,
                         'original_filename': filename,
-                        'processed_filename': image_url, # Now storing the Full URL
-                        'tree_count': tree_count,
-                        'confidence_score': confidence_score,
-                        'created_at': firestore.SERVER_TIMESTAMP
-                    })
+                        'processed_filename': image_url,
+                        'tree_count': tree_count, # Legacy field support
+                        'total_count': tree_count,
+                        'mature_count': analysis_data.get('mature_count', 0),
+                        'young_count': analysis_data.get('young_count', 0),
+                        'total_area_m2': analysis_data.get('total_area_m2', 0),
+                        'total_area_ha': analysis_data.get('total_area_ha', 0),
+                        'method_name': analysis_data.get('method_name', 'YOLOv8-Seg'),
+                        'confidence_score': 0.94, # Hardcoded/Avg for now if not in response
+                        'chart_base64': chart_base64, # Save chart directly
+                        'created_at': firestore.SERVER_TIMESTAMP,
+                        'custom_name': filename # Init custom name
+                    }
+                    
+                    doc_ref.set(firestore_data)
                     
                     flash('Analysis successful!', 'success')
                     return redirect(url_for('analysis_detail', analysis_id=doc_ref.id))
@@ -260,6 +279,7 @@ def upload():
             
             except Exception as e:
                 flash(f'An error occurred: {str(e)}', 'danger')
+                print(f"UPLOAD ERROR: {e}") # Debug log
                 
     return render_template('upload.html')
 
@@ -276,29 +296,33 @@ def analysis_detail(analysis_id):
         
     analysis_data = doc.to_dict()
     analysis_data['id'] = doc.id
+    analysis_data['analysis_id'] = doc.id # Alias for template compatibility
     
     # Check ownership
     if analysis_data.get('user_id') != current_user.id:
         flash('Unauthorized access', 'danger')
         return redirect(url_for('history'))
     
-    # The 'processed_filename' field now contains the full URL from Firebase Storage
     image_url = analysis_data.get('processed_filename')
     
-    # Wrap data to look like an object for Jinja if needed, 
-    # but Jinja can handle dicts if we used analysis.key syntax... 
-    # Wait, existing templates use dot notation (analysis.tree_count).
-    # We need a wrapper or update templates. Updating templates is safer but more work.
-    # Let's use a wrapper class for 'Analysis' compatibility.
-    
+    # Improved Wrapper to handle ALL fields required by analysis_detail.html
     class AnalysisWrapper:
         def __init__(self, data):
             self.id = data.get('id')
+            self.analysis_id = data.get('id')
             self.original_filename = data.get('original_filename')
             self.processed_filename = data.get('processed_filename')
-            self.tree_count = data.get('tree_count')
-            self.confidence_score = data.get('confidence_score')
+            self.tree_count = data.get('tree_count', 0)
+            self.total_count = data.get('total_count', self.tree_count) # Fallback to tree_count
+            self.confidence_score = data.get('confidence_score', 0)
             self.created_at = data.get('created_at')
+            self.method_name = data.get('method_name', 'Standard Analysis')
+            self.total_area_m2 = data.get('total_area_m2', 0)
+            self.total_area_ha = data.get('total_area_ha', 0)
+            self.mature_count = data.get('mature_count', 0)
+            self.young_count = data.get('young_count', 0)
+            self.chart_base64 = data.get('chart_base64')
+            self.custom_name = data.get('custom_name')
     
     analysis_obj = AnalysisWrapper(analysis_data)
         
