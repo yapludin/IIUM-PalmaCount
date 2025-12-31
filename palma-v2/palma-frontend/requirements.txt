@@ -4,3 +4,4 @@ requests
 werkzeug
 firebase-admin
 gunicorn
+Flask-Login
