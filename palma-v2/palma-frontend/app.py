@@ -9,21 +9,31 @@ import os
 from datetime import datetime, timedelta
 import random
 
+import cloudinary
+import cloudinary.uploader
+
 app = Flask(__name__)
 app.secret_key = "0102490139"
 
 # --- Configuration ---
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Default (Local) Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///analyses.db'
+# Database Config (Prioritize Neon/Postgres, fallback to SQLite)
+# Note: Render provides 'DATABASE_URL' but it starts with 'postgres://'. 
+# SQLAlchemy requires 'postgresql://', so we fix it.
+database_url = os.environ.get('DATABASE_URL')
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///analyses.db'
+
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['PROCESSED_FOLDER'] = 'static/processed'
 
-# --- RENDER PERSISTENCE LOGIC ---
+# --- RENDER PERSISTENCE LOGIC (Legacy / Optional Disk) ---
 # If RENDER_DISK_PATH is set (e.g., /var/data), we use it for DB and Storage.
 render_disk = os.environ.get('RENDER_DISK_PATH')
-if render_disk:
+if render_disk and not database_url: # Only use Disk DB if no Cloud DB
     print(f"--- MOUNTING PERSISTENT STORAGE: {render_disk} ---")
     
     # 1. Redirect Database to Disk
@@ -233,11 +243,34 @@ def upload():
             
             # 2. Extract and Save the Processed Image
             image_base64 = analysis_results.get("image_base64")
+            
+            # Check if Cloudinary is configured
+            cloudinary_url = os.environ.get("CLOUDINARY_URL")
+            
             if image_base64:
                 image_data = base64.b64decode(image_base64)
-                processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
-                with open(processed_path, "wb") as f:
-                    f.write(image_data)
+                
+                if cloudinary_url:
+                    # --- CLOUDINARY UPLOAD ---
+                    try:
+                        # Upload directly from bytes
+                        upload_result = cloudinary.uploader.upload(
+                            image_data, 
+                            folder="palma_processed",
+                            resource_type="image"
+                        )
+                        # Save the SECURE URL (https) to the database
+                        processed_filename = upload_result['secure_url']
+                        print(f"Uploaded to Cloudinary: {processed_filename}")
+                    except Exception as e:
+                        print(f"Cloudinary Error: {e}")
+                        flash("Error saving to cloud storage", "danger")
+                        return redirect(url_for('upload'))
+                else:
+                    # --- LOCAL STORAGE ---
+                    processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
+                    with open(processed_path, "wb") as f:
+                        f.write(image_data)
             
             # 3. Save to Database (Including Area and Charts)
             new_analysis = Analysis(
@@ -414,7 +447,14 @@ def history():
 @login_required
 def analysis_detail(analysis_id):
     analysis = Analysis.query.filter_by(analysis_id=analysis_id, user_id=session['user_id']).first_or_404()
-    image_url = url_for('static', filename='processed/' + analysis.processed_filename)
+    
+    # Check if filename is a Cloudinary URL
+    if analysis.processed_filename.startswith('http'):
+        image_url = analysis.processed_filename
+    else:
+        # Fallback for old local files
+        image_url = url_for('static', filename='processed/' + analysis.processed_filename)
+        
     return render_template("analysis_detail.html", analysis=analysis, processed_image_url=image_url)
 
 @app.route('/about')  

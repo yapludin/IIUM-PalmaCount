@@ -155,9 +155,14 @@
 
           <!-- Image Preview -->
           <div class="relative h-64 overflow-hidden bg-gray-100">
+            {% if analysis.processed_filename.startswith('http') %}
+            <img src="{{ analysis.processed_filename }}" alt="{{ analysis.original_filename }}"
+              class="w-full h-full object-cover grayscale-[10%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700">
+            {% else %}
             <img src="{{ url_for('static', filename='processed/' + analysis.processed_filename) }}"
               alt="{{ analysis.original_filename }}"
               class="w-full h-full object-cover grayscale-[10%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700">
+            {% endif %}
 
             <div
               class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity">

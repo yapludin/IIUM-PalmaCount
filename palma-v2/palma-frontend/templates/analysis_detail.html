@@ -280,8 +280,13 @@
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group p-2">
                 <div class="relative aspect-square bg-slate-100 rounded-xl overflow-hidden cursor-zoom-in"
                     onclick="openModal()">
+                    {% if analysis.processed_filename.startswith('http') %}
+                    <img src="{{ analysis.processed_filename }}"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                    {% else %}
                     <img src="{{ processed_image_url }}"
                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                    {% endif %}
                     <div class="absolute top-3 left-3 flex gap-2">
                         <span
                             class="px-2 py-1 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded shadow-lg">Analyzed</span>

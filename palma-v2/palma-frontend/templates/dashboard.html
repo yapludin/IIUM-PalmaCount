@@ -200,8 +200,13 @@
                                     <td class="px-6 py-4 pl-8">
                                         <div
                                             class="w-14 h-14 rounded-xl overflow-hidden border border-slate-200 shadow-sm relative group-hover:shadow-md transition">
+                                            {% if analysis.processed_filename.startswith('http') %}
+                                            <img src="{{ analysis.processed_filename }}"
+                                                class="w-full h-full object-cover">
+                                            {% else %}
                                             <img src="{{ url_for('static', filename='processed/' + analysis.processed_filename) }}"
                                                 class="w-full h-full object-cover">
+                                            {% endif %}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
