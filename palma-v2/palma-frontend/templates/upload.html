@@ -6,20 +6,56 @@
 <div class="min-h-[90vh] bg-neutral-50 py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-6xl mx-auto">
 
-    
-    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-8 space-y-3 animate-fadeInUp">
+      {% for category, message in messages %}
+      <div class="px-5 py-4 rounded-xl text-sm font-bold flex items-center shadow-sm border border-transparent
+               {% if category == 'success' %}bg-emerald-50 text-emerald-800 border-emerald-100
+               {% elif category == 'danger' %}bg-red-50 text-red-800 border-red-100
+               {% else %}bg-blue-50 text-blue-800 border-blue-100{% endif %}">
+
+        {% if category == 'success' %}
+        <svg class="w-5 h-5 mr-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {% elif category == 'danger' %}
+        <svg class="w-5 h-5 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {% else %}
+        <svg class="w-5 h-5 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {% endif %}
+
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
       <div class="lg:col-span-1">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-8">
           <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-green-600 mr-2">
-              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 01-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 01-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 01-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584zM12 18a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+              class="w-5 h-5 text-green-600 mr-2">
+              <path fill-rule="evenodd"
+                d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 01-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 01-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 01-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584zM12 18a.75.75 0 100-1.5.75.75 0 000 1.5z"
+                clip-rule="evenodd" />
             </svg>
             Image Guidelines
           </h3>
           <div class="relative mb-6 rounded-xl overflow-hidden border border-gray-200 group">
-            <img src="static\images\aereal-tree.jpg" alt="Good example" class="w-full h-48 object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+            <img src="static\images\aereal-tree.jpg" alt="Good example"
+              class="w-full h-48 object-cover opacity-90 group-hover:opacity-100 transition-opacity">
             <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3">
               <p class="text-white text-sm font-medium">Ideal: Clear Aerial View</p>
             </div>
@@ -46,168 +82,207 @@
           </div>
 
           <form method="POST" enctype="multipart/form-data">
-            
+
             <div class="relative w-full h-80">
-                <input id="file-input" type="file" name="image" accept="image/*" class="hidden" required>
+              <input id="file-input" type="file" name="image" accept="image/*" class="hidden" required>
 
-                <label for="file-input" id="dropzone-label"
-                  class="absolute inset-0 flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50/50 transition-all duration-200 ease-in-out z-10">
-                  
-                  <div id="dropzone-content" class="flex flex-col items-center space-y-4 pointer-events-none">
-                    <div class="p-4 bg-white rounded-full shadow-sm border border-gray-100 transition" id="dropzone-icon">
-                       <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5V19a2.5 2.5 0 0 0 2.5 2.5h13A2.5 2.5 0 0 0 21 19v-2.5M16 12l-4-4m0 0l-4 4m4-4v12" />
-                      </svg>
-                    </div>
-                    <div class="text-center">
-                      <p class="text-gray-700 font-medium text-lg">Drag and drop your image</p>
-                      <p class="text-gray-500 text-sm mt-1">or <span class="text-green-700 underline font-medium">browse files</span></p>
-                    </div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wider font-medium">PNG, JPG, or WEBP up to 10MB</p>
+              <label for="file-input" id="dropzone-label"
+                class="absolute inset-0 flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50/50 transition-all duration-200 ease-in-out z-10">
+
+                <div id="dropzone-content" class="flex flex-col items-center space-y-4 pointer-events-none">
+                  <div class="p-4 bg-white rounded-full shadow-sm border border-gray-100 transition" id="dropzone-icon">
+                    <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" stroke-width="1.5"
+                      viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 16.5V19a2.5 2.5 0 0 0 2.5 2.5h13A2.5 2.5 0 0 0 21 19v-2.5M16 12l-4-4m0 0l-4 4m4-4v12" />
+                    </svg>
                   </div>
-                </label>
-
-                <div id="preview-layer" class="absolute inset-0 z-20 hidden w-full h-full bg-white rounded-2xl border-2 border-green-500 overflow-hidden shadow-sm">
-                    <img id="preview-img" src="" class="w-full h-full object-contain bg-neutral-100" alt="Preview">
-                    <div class="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-black/20 to-transparent pointer-events-none"></div>
-                    
-                    <button type="button" id="remove-btn" class="absolute top-3 right-3 bg-white/90 hover:bg-red-50 text-gray-500 hover:text-red-600 p-2 rounded-xl shadow-sm border border-gray-200 backdrop-blur-sm transition-all duration-200 z-30">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                    
-                    <div class="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-medium pointer-events-none">
-                        <span id="filename-display">image.jpg</span>
-                    </div>
+                  <div class="text-center">
+                    <p class="text-gray-700 font-medium text-lg">Drag and drop your image</p>
+                    <p class="text-gray-500 text-sm mt-1">or <span class="text-green-700 underline font-medium">browse
+                        files</span></p>
+                  </div>
+                  <p class="text-xs text-gray-400 uppercase tracking-wider font-medium">PNG, JPG, or WEBP up to 10MB</p>
                 </div>
+              </label>
+
+              <div id="preview-layer"
+                class="absolute inset-0 z-20 hidden w-full h-full bg-white rounded-2xl border-2 border-green-500 overflow-hidden shadow-sm">
+                <img id="preview-img" src="" class="w-full h-full object-contain bg-neutral-100" alt="Preview">
+                <div
+                  class="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-black/20 to-transparent pointer-events-none">
+                </div>
+
+                <button type="button" id="remove-btn"
+                  class="absolute top-3 right-3 bg-white/90 hover:bg-red-50 text-gray-500 hover:text-red-600 p-2 rounded-xl shadow-sm border border-gray-200 backdrop-blur-sm transition-all duration-200 z-30">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                <div
+                  class="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-medium pointer-events-none">
+                  <span id="filename-display">image.jpg</span>
+                </div>
+              </div>
             </div>
 
             <button type="submit" id="analyze-btn"
-              class="w-full mt-6 py-3 px-4 rounded-xl bg-green-700 hover:bg-green-800 text-white text-base font-semibold shadow-sm transition-all duration-200 ease-in-out flex items-center justify-center opacity-50 cursor-not-allowed" disabled>
-              
+              class="w-full mt-6 py-3 px-4 rounded-xl bg-green-700 hover:bg-green-800 text-white text-base font-semibold shadow-sm transition-all duration-200 ease-in-out flex items-center justify-center opacity-50 cursor-not-allowed"
+              disabled>
+
               Start Analysis
             </button>
           </form>
 
-          
+
         </div>
-      </div> 
-      
-    </div> 
-    
+      </div>
+
+    </div>
+
   </div>
 
-  
+
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay"
+  class="fixed inset-0 z-50 hidden bg-white/90 backdrop-blur-sm flex-col items-center justify-center">
+  <div class="relative w-24 h-24 mb-4">
+    <!-- Outer Spinner -->
+    <div class="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
+    <div class="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"></div>
+    <!-- Inner Icon -->
+    <div class="absolute inset-0 flex items-center justify-center">
+      <svg class="w-10 h-10 text-emerald-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+      </svg>
+    </div>
+  </div>
+  <h3 class="text-xl font-bold text-gray-900 animate-pulse">Analyzing Plantation...</h3>
+  <p class="text-sm text-gray-500 mt-2">Identifying palm trees & calculating density</p>
 </div>
 
 
-
 <script>
-const fileInput = document.getElementById("file-input");
-const dropzoneLabel = document.getElementById("dropzone-label");
-const previewLayer = document.getElementById("preview-layer");
-const previewImg = document.getElementById("preview-img");
-const removeBtn = document.getElementById("remove-btn");
-const analyzeBtn = document.getElementById("analyze-btn");
-const filenameDisplay = document.getElementById("filename-display");
+  const fileInput = document.getElementById("file-input");
+  const dropzoneLabel = document.getElementById("dropzone-label");
+  const previewLayer = document.getElementById("preview-layer");
+  const previewImg = document.getElementById("preview-img");
+  const removeBtn = document.getElementById("remove-btn");
+  const analyzeBtn = document.getElementById("analyze-btn");
+  const filenameDisplay = document.getElementById("filename-display");
+  const loadingOverlay = document.getElementById("loading-overlay");
+  const form = document.querySelector('form');
 
-// --- DRAG AND DROP EVENTS ---
+  // --- SHOW LOADING SCREEN ON SUBMIT ---
+  form.addEventListener('submit', (e) => {
+    // Only show if file is selected (which validation handles, but safe to check)
+    if (fileInput.files.length > 0) {
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+    }
+  });
 
-// Prevent default drag behaviors
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-  dropzoneLabel.addEventListener(eventName, preventDefaults, false);
-  document.body.addEventListener(eventName, preventDefaults, false);
-});
+  // --- DRAG AND DROP EVENTS ---
 
-function preventDefaults (e) {
-  e.preventDefault();
-  e.stopPropagation();
-}
+  // Prevent default drag behaviors
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropzoneLabel.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
 
-// Highlight drop area when item is dragged over it
-['dragenter', 'dragover'].forEach(eventName => {
-  dropzoneLabel.addEventListener(eventName, highlight, false);
-});
-
-['dragleave', 'drop'].forEach(eventName => {
-  dropzoneLabel.addEventListener(eventName, unhighlight, false);
-});
-
-function highlight(e) {
-  dropzoneLabel.classList.add('border-green-500', 'bg-green-50', 'scale-[1.01]');
-  dropzoneLabel.classList.remove('border-gray-300', 'bg-gray-50/50');
-}
-
-function unhighlight(e) {
-  dropzoneLabel.classList.remove('border-green-500', 'bg-green-50', 'scale-[1.01]');
-  dropzoneLabel.classList.add('border-gray-300', 'bg-gray-50/50');
-}
-
-// Handle dropped files
-dropzoneLabel.addEventListener('drop', handleDrop, false);
-
-function handleDrop(e) {
-  const dt = e.dataTransfer;
-  const files = dt.files;
-
-  if (files.length > 0) {
-    fileInput.files = files; // Assign dropped files to input
-    handleFiles(files[0]);   // Trigger preview logic
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
   }
-}
 
-// --- STANDARD FILE INPUT EVENTS ---
+  // Highlight drop area when item is dragged over it
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropzoneLabel.addEventListener(eventName, highlight, false);
+  });
 
-fileInput.addEventListener("change", (e) => {
-  if (fileInput.files.length > 0) {
-    handleFiles(fileInput.files[0]);
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropzoneLabel.addEventListener(eventName, unhighlight, false);
+  });
+
+  function highlight(e) {
+    dropzoneLabel.classList.add('border-green-500', 'bg-green-50', 'scale-[1.01]');
+    dropzoneLabel.classList.remove('border-gray-300', 'bg-gray-50/50');
   }
-});
 
-function handleFiles(file) {
-  // Validate Image Type
-  if (!file.type.startsWith('image/')) {
+  function unhighlight(e) {
+    dropzoneLabel.classList.remove('border-green-500', 'bg-green-50', 'scale-[1.01]');
+    dropzoneLabel.classList.add('border-gray-300', 'bg-gray-50/50');
+  }
+
+  // Handle dropped files
+  dropzoneLabel.addEventListener('drop', handleDrop, false);
+
+  function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files.length > 0) {
+      fileInput.files = files; // Assign dropped files to input
+      handleFiles(files[0]);   // Trigger preview logic
+    }
+  }
+
+  // --- STANDARD FILE INPUT EVENTS ---
+
+  fileInput.addEventListener("change", (e) => {
+    if (fileInput.files.length > 0) {
+      handleFiles(fileInput.files[0]);
+    }
+  });
+
+  function handleFiles(file) {
+    // Validate Image Type
+    if (!file.type.startsWith('image/')) {
       alert('Please select a valid image file.');
       fileInput.value = '';
       return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      previewImg.src = event.target.result;
+      filenameDisplay.textContent = file.name;
+
+      // Show Preview
+      previewLayer.classList.remove("hidden");
+      toggleAnalyzeButton(true);
+    };
+    reader.readAsDataURL(file);
   }
 
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    previewImg.src = event.target.result;
-    filenameDisplay.textContent = file.name;
-    
-    // Show Preview
-    previewLayer.classList.remove("hidden");
-    toggleAnalyzeButton(true);
-  };
-  reader.readAsDataURL(file);
-}
+  // --- BUTTON & UI UTILS ---
 
-// --- BUTTON & UI UTILS ---
-
-const toggleAnalyzeButton = (isEnabled) => {
-  if (isEnabled) {
-    analyzeBtn.disabled = false;
-    analyzeBtn.classList.remove("opacity-50", "cursor-not-allowed");
-    analyzeBtn.classList.add("hover:shadow-md", "hover:scale-[1.01]");
-  } else {
-    analyzeBtn.disabled = true;
-    analyzeBtn.classList.add("opacity-50", "cursor-not-allowed");
-    analyzeBtn.classList.remove("hover:shadow-md", "hover:scale-[1.01]");
+  const toggleAnalyzeButton = (isEnabled) => {
+    if (isEnabled) {
+      analyzeBtn.disabled = false;
+      analyzeBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      analyzeBtn.classList.add("hover:shadow-md", "hover:scale-[1.01]");
+    } else {
+      analyzeBtn.disabled = true;
+      analyzeBtn.classList.add("opacity-50", "cursor-not-allowed");
+      analyzeBtn.classList.remove("hover:shadow-md", "hover:scale-[1.01]");
+    }
   }
-}
 
-removeBtn.addEventListener("click", (e) => {
-  e.preventDefault(); 
-  e.stopPropagation();
+  removeBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  fileInput.value = "";
-  previewImg.src = "";
-  previewLayer.classList.add("hidden");
-  toggleAnalyzeButton(false);
-});
+    fileInput.value = "";
+    previewImg.src = "";
+    previewLayer.classList.add("hidden");
+    toggleAnalyzeButton(false);
+  });
 </script>
 
 {% endblock %}

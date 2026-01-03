@@ -43,3 +43,5 @@ instance/
 palma-frontend/static/uploads/
 palma-frontend/static/processed/
 palma-backend/temp/
+serviceAccountKey.json
+**/*serviceAccountKey.json

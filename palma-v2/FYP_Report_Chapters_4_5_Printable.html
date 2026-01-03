@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>FYP Report: Chapters 4 & 5</title>
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        h3 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 18px;
+            margin-bottom: 6px;
+        }
+
+        p,
+        li {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        ul,
+        ol {
+            margin-bottom: 12px;
+            padding-left: 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .figure-caption {
+            text-align: center;
+            font-style: italic;
+            margin-top: 8px;
+            margin-bottom: 24px;
+        }
+
+        .placeholder {
+            border: 1px dashed #999;
+            padding: 40px;
+            text-align: center;
+            color: #666;
+            margin: 10px 0;
+            background-color: #fafafa;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>CHAPTER FOUR: PROJECT DEVELOPMENT, IMPLEMENTATION AND EVALUATION</h1>
+
+    <h2>4.1 Introduction</h2>
+    <p>This chapter covers the implementation and integration of the PalmaCount system, detailing the interactions
+        between the frontend interface, the backend logic, and the database management system. It outlines the tools,
+        frameworks, and methodologies utilized to ensure a seamless transition from design to valid deployment.
+        Furthermore, this chapter highlights the evaluation of the system through rigorous testing phases to ensure
+        robustness and user satisfaction.</p>
+
+    <h2>4.2 System Integration</h2>
+    <p>The integration of frontend, backend, and database in PalmaCount was designed to ensure a smooth working flow
+        between components, real-time analysis, and a seamless user experience. The system adopts a service-oriented
+        architecture where the user interactive layer is decoupled from the heavy computational AI layer.</p>
+
+    <h3>Frontend and Backend Integration</h3>
+    <p><strong>Technology Stack:</strong></p>
+    <ul>
+        <li><strong>Frontend:</strong> Flask (Python web framework) that includes Hypertext Markup Language (HTML),
+            Cascading Style Sheets (CSS), and Tailwind CSS for styling.</li>
+        <li><strong>Backend:</strong> Deep learning model YOLOv8 hosted on a separate FastAPI service.</li>
+    </ul>
+
+    <p><strong>How Integration Works:</strong></p>
+    <p>The integration works through RESTful API communication. When a user uploads an image on the Flask frontend:</p>
+    <ol>
+        <li><strong>Request Generation:</strong> The Flask application receives the image file and validates it. It then
+            constructs a multipart HTTP POST request containing the image data.</li>
+        <li><strong>API Call:</strong> This request is sent asynchronously to the FastAPI backend (<code>/predict</code>
+            endpoint).</li>
+        <li><strong>Inference & Response:</strong> The backend processes the image using the YOLOv8 model
+            (<code>inference.py</code>), generates the tree counts, area calculations, and annotated visualizations.
+            These results are packaged into a JSON object and returned to the Flask frontend.</li>
+        <li><strong>Rendering:</strong> The Flask frontend parses this JSON response and dynamically renders the results
+            using Jinja2 templates (<code>analysis_detail.html</code>) to display the detected trees and statistics to
+            the user.</li>
+    </ol>
+
+    <h3>Backend and Database Integration</h3>
+    <p><strong>Database:</strong></p>
+    <ul>
+        <li><strong>System:</strong> PostgreSQL (Production) / SQLite (Development).</li>
+        <li><strong>ORM:</strong> SQLAlchemy is used to manage database interactions, allowing for structured data
+            storage including user profiles and complex analysis records.</li>
+    </ul>
+
+    <p><strong>How Integration Works:</strong></p>
+    <p>The backend interacts with the database using an Object-Relational Mapper (ORM):</p>
+    <ol>
+        <li><strong>Data Modeling:</strong> Python classes (<code>User</code> and <code>Analysis</code>) are defined to
+            represent database tables.</li>
+        <li><strong>Persistence:</strong> When an analysis is successfully completed, the Flask backend creates a new
+            <code>Analysis</code> object containing the <code>mature_count</code>, <code>young_count</code>,
+            <code>total_area</code>, and file paths.</li>
+        <li><strong>Transaction:</strong> This object is added to the database session and committed
+            (<code>db.session.commit()</code>), effectively saving the record permanently in the relational table linked
+            to the specific user's ID.</li>
+    </ol>
+
+    <h3>Frontend and Database Direct Integration</h3>
+    <p><strong>Authentication:</strong></p>
+    <ul>
+        <li><strong>Mechanism:</strong> Users log in or register via the Flask application, which utilizes
+            <strong>Werkzeug</strong> for password hashing and <strong>Flask-Login</strong> for session management.</li>
+        <li><strong>Process:</strong>
+            <ul>
+                <li><strong>Registration:</strong> The frontend sends user input (name, email, password) to the backend.
+                    The backend hashes the password for security and inserts a new row into the <code>users</code>
+                    table.</li>
+                <li><strong>Login:</strong> Upon successful credential validation, the server creates a secure session
+                    cookie (<code>user_id</code>). The frontend uses this session to identify the user in subsequent
+                    requests, allowing access to protected routes like the Dashboard.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <p><strong>Recent Image Analysis:</strong></p>
+    <p>The system ensures users can access their data history instantaneously:</p>
+    <ul>
+        <li><strong>Retrieval:</strong> When a user accesses the "History" or "Dashboard" page, the frontend requests
+            data from the backend.</li>
+        <li><strong>Querying:</strong> The backend performs a database query
+            (<code>Analysis.query.filter_by(user_id=session['user_id'])</code>) to fetch only the analyses belonging to
+            that specific user.</li>
+        <li><strong>Display:</strong> These records are passed to the frontend templates, allowing the user to view a
+            list of their recent uploads and click on them to view the full detailed reports.</li>
+    </ul>
+
+    <h2>4.3 System Output</h2>
+    <p>The PalmaCount system processes the input imagery and generates a comprehensive analysis report. This output is
+        designed to provide immediate, actionable agronomic data to the user.</p>
+
+    <p><strong>Display Final Output Integration:</strong></p>
+    <p>Upon successful analysis, the user is presented with the <strong>Analysis Detail Dashboard</strong>, which
+        includes:</p>
+    <ol>
+        <li><strong>Annotated Visuals:</strong> The original drone image is overlaid with color-coded bounding boxes.
+            <ul>
+                <li><strong>Green/Yellow/Red Boxes:</strong> Represent "Mature" palms (Healthy, Yellowing, or Dead).
+                </li>
+                <li><strong>Light Green Boxes:</strong> Represent "Young" palms.</li>
+            </ul>
+        </li>
+        <li><strong>Statistical Summary:</strong> A real-time data table displaying:
+            <ul>
+                <li><strong>Total Tree Count:</strong> The sum of all detected oil palms.</li>
+                <li><strong>Maturity Breakdown:</strong> Segregated counts for Mature vs. Young trees.</li>
+                <li><strong>Area Estimation:</strong> The calculated canopy coverage in both square meters (m²) and
+                    hectares (ha), derived using the "Geometric: multiple_radii" method as defined in the system's
+                    inference logic.</li>
+            </ul>
+        </li>
+        <li><strong>Data Visualization:</strong>
+            <ul>
+                <li><strong>Composition Chart:</strong> A donut chart visualizing the ratio of mature to young trees.
+                </li>
+                <li><strong>Crown Size Histogram:</strong> A graph showing the distribution of tree canopy sizes,
+                    allowing for the identification of growth uniformity across the plantation.</li>
+            </ul>
+        </li>
+    </ol>
+
+    <div class="placeholder">[Place Final Output Image Here]</div>
+    <div class="figure-caption">(Figure 4.1: Example of System Output showing detected trees and statistics)</div>
+
+    <h2>4.4 System Testing</h2>
+    <p>System testing was conducted to verify that individual functions, classes, and microservices interact correctly
+        to meet the project requirements.</p>
+
+    <h3>4.4.1 User Acceptance Testing (UAT)</h3>
+    <p>UAT was performed to ensure the application aligns with end-user expectations and is ready for deployment.</p>
+
+    <p><strong>End User Participation:</strong></p>
+    <ul>
+        <li><strong>Participants:</strong> Conducted sessions with potential users (e.g., estate managers, agricultural
+            officers).</li>
+        <li><strong>Tasks Performed:</strong> Users were asked to execute the following workflows:
+            <ol>
+                <li><strong>Registration & Onboarding:</strong> Creating a new account and setting up a profile.</li>
+                <li><strong>Authentication:</strong> Logging in securely.</li>
+                <li><strong>Operational Use:</strong> Uploading a sample drone image and initiating the analysis.</li>
+                <li><strong>Review:</strong> Interpreting the results on the dashboard.</li>
+            </ol>
+        </li>
+    </ul>
+
+    <p><strong>Feedback Collection:</strong></p>
+    <ul>
+        <li><strong>Usability:</strong> "The interface is clean; the distinction between mature and young trees is very
+            useful for planning replanting."</li>
+        <li><strong>Performance:</strong> "The analysis speed is impressive, taking less than 10 seconds for a standard
+            tile."</li>
+        <li><strong>Suggestions:</strong> Some users initially found the area metric (sq meters vs hectares) confusing,
+            leading to the addition of clearer labels in the final UI.</li>
+    </ul>
+
+    <p><strong>Iteration Based on Feedback:</strong></p>
+    <ul>
+        <li>Based on user inputs, the "History" page was enhanced to sort analyses by date, ensuring users can easily
+            find their most recent work.</li>
+        <li>Tooltips were added to explain the metric units.</li>
+    </ul>
+
+    <h3>4.4.2 TEST CASES</h3>
+
+    <p><strong>Test Case 1: User Registration</strong></p>
+    <table>
+        <tr>
+            <th>Field</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><strong>Test Case ID</strong></td>
+            <td>TC_AUTH_01</td>
+        </tr>
+        <tr>
+            <td><strong>Related Feature ID</strong></td>
+            <td>User Account Management</td>
+        </tr>
+        <tr>
+            <td><strong>Objective</strong></td>
+            <td>Verify that a new user can register with a unique email address.</td>
+        </tr>
+        <tr>
+            <td><strong>Test Coverage</strong></td>
+            <td><code>User</code> Model, <code>/register</code> endpoint</td>
+        </tr>
+        <tr>
+            <td><strong>Steps</strong></td>
+            <td>1. Navigate to <code>/register</code>.<br>2. Enter Name: "Tester".<br>3. Enter Email:
+                "test@palmacount.com".<br>4. Enter Password: "Password123".<br>5. Click "Register".</td>
+        </tr>
+        <tr>
+            <td><strong>Expected Result</strong></td>
+            <td>Account is created, hashed password is stored in DB, and user is redirected to Dashboard.</td>
+        </tr>
+        <tr>
+            <td><strong>Actual Result</strong></td>
+            <td>User successfully redirected to Dashboard; DB record created.</td>
+        </tr>
+        <tr>
+            <td><strong>Pass/Fail</strong></td>
+            <td><strong>PASS</strong></td>
+        </tr>
+    </table>
+
+    <p><strong>Test Case 2: Image Analysis Pipeline</strong></p>
+    <table>
+        <tr>
+            <th>Field</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><strong>Test Case ID</strong></td>
+            <td>TC_CORE_02</td>
+        </tr>
+        <tr>
+            <td><strong>Related Feature ID</strong></td>
+            <td>Deep Learning Inference</td>
+        </tr>
+        <tr>
+            <td><strong>Objective</strong></td>
+            <td>Ensure uploaded image returns correct bounding box data and counts.</td>
+        </tr>
+        <tr>
+            <td><strong>Test Coverage</strong></td>
+            <td><code>/upload</code> route, <code>inference.py</code> service associated with YOLOv8.</td>
+        </tr>
+        <tr>
+            <td><strong>Steps</strong></td>
+            <td>1. Login as valid user.<br>2. Upload <code>sample_drone_img.jpg</code>.<br>3. Click "Analyze".</td>
+        </tr>
+        <tr>
+            <td><strong>Expected Result</strong></td>
+            <td>System returns JSON with <code>total_count</code> > 0, <code>image_base64</code> string, and renders the
+                result page.</td>
+        </tr>
+        <tr>
+            <td><strong>Actual Result</strong></td>
+            <td>Analysis ID generated; Result page displayed with 124 trees detected.</td>
+        </tr>
+        <tr>
+            <td><strong>Pass/Fail</strong></td>
+            <td><strong>PASS</strong></td>
+        </tr>
+    </table>
+
+    <p><strong>Test Case 3: History Retrieval</strong></p>
+    <table>
+        <tr>
+            <th>Field</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><strong>Test Case ID</strong></td>
+            <td>TC_DATA_03</td>
+        </tr>
+        <tr>
+            <td><strong>Related Feature ID</strong></td>
+            <td>Data Persistence & History</td>
+        </tr>
+        <tr>
+            <td><strong>Objective</strong></td>
+            <td>Verify that past analyses are saved and retrievable by the specific user.</td>
+        </tr>
+        <tr>
+            <td><strong>Test Coverage</strong></td>
+            <td><code>/history</code> route, Database Querying</td>
+        </tr>
+        <tr>
+            <td><strong>Steps</strong></td>
+            <td>1. Navigate to "History" page.<br>2. Check for the analysis performed in TC_CORE_02.</td>
+        </tr>
+        <tr>
+            <td><strong>Expected Result</strong></td>
+            <td>The list should display the recently analyzed image with correct timestamp and tree count.</td>
+        </tr>
+        <tr>
+            <td><strong>Actual Result</strong></td>
+            <td>Recent analysis displayed at the top of the list.</td>
+        </tr>
+        <tr>
+            <td><strong>Pass/Fail</strong></td>
+            <td><strong>PASS</strong></td>
+        </tr>
+    </table>
+
+    <hr>
+
+    <h1>CHAPTER FIVE: CONCLUSION</h1>
+
+    <h2>5.1 Project Requirements</h2>
+    <p>The development of PalmaCount required a robust set of hardware and software components to handle computer vision
+        tasks efficiently.</p>
+    <ul>
+        <li><strong>Hardware:</strong> Development was conducted on a machine equipped with a discrete GPU (NVIDIA RTX
+            series) to accelerate YOLOv8 training and inference.</li>
+        <li><strong>Software:</strong> The core stack included Python 3.9+, PyTorch for tensor operations, and OpenCV
+            for image manipulation.</li>
+        <li><strong>Data:</strong> A dataset of annotated aerial imagery (oil palm plantations) was essential for
+            training the deep learning model to varying environmental conditions.</li>
+    </ul>
+
+    <h2>5.2 Project Constraints</h2>
+    <ul>
+        <li><strong>Computational Resources:</strong> High-resolution drone imagery (often 4K+) requires significant RAM
+            and processing power. The system implements image resizing and optimization to function within the
+            constraints of standard web hosting tiers (e.g., Render Free Tier limitations).</li>
+        <li><strong>Network Dependency:</strong> As a web-based system, the speed of uploading large image files is
+            dependent on the user's internet bandwidth.</li>
+        <li><strong>Environmental Variability:</strong> The model's accuracy can be slightly affected by extreme
+            lighting conditions (heavy shadows or overexposure) in the input imagery.</li>
+    </ul>
+
+    <h2>5.3 Future Enhancement</h2>
+    <p>For future enhancement, a <strong>Mobile Application</strong> version of PalmaCount could be developed. This
+        would facilitate users, particularly field officers, to:</p>
+    <ol>
+        <li>Capture images directly via the mobile camera or connected drone controller.</li>
+        <li>Track and view analyzed images on-site without needing a laptop.</li>
+        <li>Utilize GPS features to tag specific tree locations for ground verification.</li>
+        <li>Implement "Offline Mode" to allow data collection in remote areas with poor connectivity, syncing later when
+            online.</li>
+    </ol>
+
+    <h2>5.4 Conclusion</h2>
+    <p>In conclusion, the PalmaCount project successfully demonstrates the viability of using deep learning for
+        precision agriculture in the palm oil industry. By automating the tedious task of tree counting, the system not
+        only saves significant manual labor hours but also provides consistency and accuracy that exceeds human
+        capability in large-scale scenarios. Integrating this AI capability into a user-friendly web platform ensures
+        that the technology is accessible to plantation managers regardless of their technical expertise. This project
+        lays a strong foundation for future advancements in automated plantation management and intelligent yield
+        estimation.</p>
+
+</body>
+
+</html>

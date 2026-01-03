@@ -24,9 +24,9 @@
                     <span class="text-white">Dashboard</span>
                 </nav>
                 <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight">
-                    Hello, {{ user.full_name or user.name }} .<span class="text-2xl ml-2"></span>
+                    Hello, {{ user.full_name or user.name }}<span class="text-2xl ml-2"></span>
                 </h1>
-                <p class="text-emerald-100/80 mt-2 text-lg font-light">Here is your plantation overview for today.</p>
+                <p class="text-emerald-100/80 mt-2 text-lg font-light">Here is your plantation overview.</p>
             </div>
 
             <div class="flex gap-3">
@@ -87,7 +87,7 @@
                 </div>
                 <div>
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Current Tier</p>
-                    <h3 class="text-2xl font-black text-slate-800">New Planter</h3>
+                    <h3 class="text-2xl font-black text-slate-800">{{ user.tier }}</h3>
                 </div>
             </div>
         </div>

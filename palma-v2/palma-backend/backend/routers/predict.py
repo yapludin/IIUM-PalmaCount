@@ -41,6 +41,7 @@ def predict(image: UploadFile = File(...)):
             "total_area_m2": result["total_area_m2"],
             "total_area_ha": result["total_area_ha"],
             "method_name": result["method_name"],
+            "confidence": result["confidence_score"],
             
             # Visuals (Base64)
             "image_base64": result["image_base64"],
@@ -57,4 +58,10 @@ def predict(image: UploadFile = File(...)):
         # Print the full error to the terminal for debugging
         print("--- BACKEND ERROR ---")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        
+        # Friendly Error Handling for common issues
+        error_msg = str(e)
+        if "cannot identify image file" in error_msg or "UnidentifiedImageError" in error_msg:
+             raise HTTPException(status_code=400, detail="The uploaded file is not a valid image. Please use JPG or PNG.")
+        
+        raise HTTPException(status_code=500, detail=error_msg)

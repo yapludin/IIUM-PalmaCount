@@ -146,7 +146,7 @@
             <th width="20%">Method</th>
             <td>{{ analysis.method_name }}</td>
             <th width="15%">Confidence</th>
-            <td>94.2%</td>
+            <td>{{ analysis.confidence }}%</td>
         </tr>
         <tr>
             <th>Detected Palms</th>
@@ -241,7 +241,7 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 uppercase">Analysis Report</h1>
                 <p class="text-[10px] text-slate-400 font-mono mt-0.5 uppercase tracking-widest">Reference: {{
-                    analysis.analysis_id[:12] }}</p>
+                    analysis.custom_name or analysis.original_filename }}</p>
             </div>
         </div>
 
@@ -310,15 +310,12 @@
                             Engine</p>
                         <p class="text-sm font-light ">{{ analysis.method_name }}</p>
                     </div>
-                    <svg class="w-8 h-8 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 12v-2m0 0v-2m0 2H6m0 0H4m0-2h2m0-2H4m0 2H3m0-2h1m0-2h1m6 6h6m-3-3v3m-3-3v3" />
-                    </svg>
+
                 </div>
                 <div class="mt-6 grid grid-cols-2 gap-4">
                     <div class="bg-white/5 p-3 rounded-lg border border-white/10">
                         <p class="text-[9px] text-white/40 uppercase font-bold">Confidence</p>
-                        <p class="text-lg font-black text-emerald-400">94.2%</p>
+                        <p class="text-lg font-black text-emerald-400">{{ analysis.confidence|default(0.0, true) }}%</p>
                     </div>
                     <div class="bg-white/5 p-3 rounded-lg border border-white/10">
                         <p class="text-[9px] text-white/40 uppercase font-bold">Scale (GSD)</p>
@@ -384,21 +381,11 @@
                     <div class="text-[10px] font-mono text-slate-400">GEO: 101.9758, 4.2105</div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    {% if analysis.chart_base64 %}
-                    <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Vitality
-                            Distribution</p>
-                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                            <img src="data:image/png;base64,{{ analysis.chart_base64 }}"
-                                class="w-full h-auto mix-blend-multiply">
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <div class="space-y-6">
+                <!-- Row 1: Statistics (Horizontal) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="space-y-4 col-span-2">
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Measurement Data</p>
-                        <div class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div
                                 class="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-end">
                                 <div>
@@ -418,17 +405,38 @@
                                 <span class="text-xs font-bold text-slate-400 mb-1">HA</span>
                             </div>
                         </div>
-                        <div class="pt-4 border-t border-slate-100">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-slate-500">Calculated Density:</span>
-                                {% set density = analysis.total_count / analysis.total_area_ha if analysis.total_area_ha
-                                > 0 else 0 %}
-                                <span class="text-sm font-black text-emerald-600">{{ "%.1f"|format(density) }}
-                                    palms/ha</span>
-                            </div>
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-500">Calculated Density:</span>
+                            {% set density = analysis.total_count / analysis.total_area_ha if analysis.total_area_ha > 0
+                            else 0 %}
+                            <span class="text-sm font-black text-emerald-600">{{ "%.1f"|format(density) }}
+                                palms/ha</span>
                         </div>
                     </div>
                 </div>
+
+                <!-- Row 2: Full Width Charts -->
+                {% if analysis.chart_base64 %}
+                <div class="pt-8 border-t border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Vitality
+                        Distribution</p>
+                    <div class="p-2 bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                        <img src="data:image/png;base64,{{ analysis.chart_base64 }}"
+                            class="w-full h-auto mix-blend-multiply hover:scale-[1.02] transition-transform duration-500">
+                    </div>
+                </div>
+                {% else %}
+                <div class="pt-8 border-t border-slate-100 text-center py-12">
+                    <div class="inline-flex p-4 bg-slate-50 rounded-full mb-3 text-slate-300">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <p class="text-sm font-bold text-slate-500">No trees detected</p>
+                    <p class="text-xs text-slate-400 mt-1">Charts require at least one identified palm tree.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

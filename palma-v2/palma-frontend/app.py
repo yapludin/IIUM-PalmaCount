@@ -44,6 +44,17 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    @property
+    def tier(self):
+        scan_count = len(self.analyses)
+        if scan_count >= 20:
+            return "Palm Master 🌴"
+        elif scan_count >= 10:
+            return "Tree Expert 🌳"
+        elif scan_count >= 5:
+            return "Sapling Scout 🌱"
+        return "New Planter 🪴"
+
 class Analysis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     analysis_id = db.Column(db.String(50), unique=True, nullable=False)
@@ -56,6 +67,7 @@ class Analysis(db.Model):
 
     total_area_m2 = db.Column(db.Float, nullable=True, default=0.0)
     total_area_ha = db.Column(db.Float, nullable=True, default=0.0)
+    confidence = db.Column(db.Float, nullable=True, default=0.0)
     method_name = db.Column(db.String(100), nullable=True)
     chart_base64 = db.Column(db.Text, nullable=True) # Text stores long Base64 strings
 
@@ -163,78 +175,120 @@ def dashboard():
 def upload():
     if request.method == 'POST':
         file = request.files['image']
+        
+        # --- 1. Generate Unique Internal ID (Safe for URL/DB) ---
         analysis_id = str(random.randint(10000000, 99999999))
-        processed_filename = f"{analysis_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        
+        # --- 2. Generate Friendly Sequential Name (YYMMDD_NNN) ---
+        today_obj = datetime.now() 
+        today_str = today_obj.strftime('%y%m%d')
+        
+        # FIX: Database stores UTC (datetime.utcnow), so strict date filtering might miss recent uploads.
+        # Instead, we just look for ANY analysis with this user that matches the pattern "YYMMDD_%"
+        # This is more robust than date filtering.
+        existing_names = Analysis.query.filter(
+            Analysis.user_id == session['user_id'],
+            Analysis.custom_name.like(f"{today_str}_%") 
+        ).with_entities(Analysis.custom_name).all()
+        
+        max_seq = 0
+        for (name,) in existing_names:
+            try:
+                # Extract "001" from "260103_001"
+                suffix = int(name.split('_')[-1])
+                if suffix > max_seq:
+                    max_seq = suffix
+            except (ValueError, IndexError):
+                continue
+                    
+        sequence_num = max_seq + 1
+        friendly_name = f"{today_str}_{sequence_num:03d}"
+        
+        # --- 3. Filename uses UNIQUE ID to prevent overwrites ---
+        processed_filename = f"{analysis_id}_{datetime.now().strftime('%H%M%S')}.jpg"
         
         temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{processed_filename}")
         file.save(temp_path)
         
-        with open(temp_path, 'rb') as f:
-            files = {'image': (file.filename, f, file.mimetype)}
-            response = requests.post(FASTAPI_URL, files=files)
-        
-        os.remove(temp_path)
-        data = response.json()
+        try:
+            with open(temp_path, 'rb') as f:
+                files = {'image': (file.filename, f, file.mimetype)}
+                response = requests.post(FASTAPI_URL, files=files, timeout=60) # Add timeout
+            
+            os.remove(temp_path)
+            
+            # Check for HTTP errors (4xx, 5xx)
+            if response.status_code != 200:
+                try:
+                    error_detail = response.json().get('detail', 'Unknown backend error')
+                except:
+                    error_detail = f"Server returned {response.status_code}"
+                flash(f"Analysis failed: {error_detail}", "danger")
+                return redirect(url_for('upload'))
+                
+            data = response.json()
 
-        if data.get("status") == "success":
-            # 1. Access the nested 'analysis' object from FastAPI
-            analysis_results = data.get("analysis", {})
-            
-            # 2. Extract and Save the Processed Image
-            image_base64 = analysis_results.get("image_base64")
-            if image_base64:
-                image_data = base64.b64decode(image_base64)
-                processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
-                with open(processed_path, "wb") as f:
-                    f.write(image_data)
-            
-            # 3. Save to Database (Including Area and Charts)
-            new_analysis = Analysis(
-                analysis_id=analysis_id,
-                user_id=session['user_id'],
-                original_filename=file.filename,
-                processed_filename=processed_filename,
+            if data.get("status") == "success":
+                # 1. Access the nested 'analysis' object from FastAPI
+                analysis_results = data.get("analysis", {})
                 
-                # Tree Counts
-                mature_count=analysis_results.get("mature_count", 0),
-                young_count=analysis_results.get("young_count", 0),
-                total_count=analysis_results.get("total_count", 0),
+                # --- GUARDRAIL: REJECT ZERO TREES ---
+                # If the model finds nothing, there is no point saving it.
+                if analysis_results.get("total_count", 0) == 0:
+                    flash("Analysis rejected: No valid palm trees detected. Please upload a clear aerial image containing trees.", "danger")
+                    return redirect(url_for('upload'))
                 
-                # Area Metrics (This fixes the 'nothing about area' issue)
-                total_area_m2=analysis_results.get("total_area_m2", 0),
-                total_area_ha=analysis_results.get("total_area_ha", 0),
-                method_name=analysis_results.get("method_name", "Owen & Lines (2024)"),
+                # 2. Extract and Save the Processed Image
+                image_base64 = analysis_results.get("image_base64")
+                if image_base64:
+                    image_data = base64.b64decode(image_base64)
+                    processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
+                    with open(processed_path, "wb") as f:
+                        f.write(image_data)
                 
-                # Chart Data
-                chart_base64=analysis_results.get("chart_base64")
-            )
+                # 3. Save to Database
+                new_analysis = Analysis(
+                    analysis_id=analysis_id,
+                    user_id=session['user_id'],
+                    original_filename=file.filename,
+                    processed_filename=processed_filename,
+                    
+                    # USER SEES THIS: "260103_001", "260103_002"
+                    custom_name=friendly_name, 
+                    
+                    # Tree Counts
+                    mature_count=analysis_results.get("mature_count", 0),
+                    young_count=analysis_results.get("young_count", 0),
+                    total_count=analysis_results.get("total_count", 0),
+                    
+                    # Area Metrics
+                    total_area_m2=analysis_results.get("total_area_m2", 0),
+                    total_area_ha=analysis_results.get("total_area_ha", 0),
+                    confidence=analysis_results.get("confidence", 0.0),
+                    method_name=analysis_results.get("method_name", "Owen & Lines (2024)"),
+                    
+                    # Chart Data
+                    chart_base64=analysis_results.get("chart_base64")
+                )
+                
+                db.session.add(new_analysis)
+                db.session.commit()
+                
+                return redirect(url_for('analysis_detail', analysis_id=analysis_id))
             
-            db.session.add(new_analysis)
-            db.session.commit()
+            else:
+                # Backend returned 200 but status != success (custom logic error)
+                flash(f"Analysis Error: {data.get('message', 'Unknown processing error')}", "danger")
+                
+        except requests.exceptions.RequestException as e:
+            flash(f"Connection Error: Could not reach analysis server. Is it running?", "danger")
+            # If temp file still exists in case of crash before remove
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
             
-            return redirect(url_for('analysis_detail', analysis_id=analysis_id))
-        
-        flash("Analysis failed")
     return render_template("upload.html")
 
-@app.route('/update_analysis_name/<int:id>', methods=['POST'])
-@login_required
-def update_analysis_name(id):
-    data = request.get_json()
-    new_name = data.get('name')
-    
-    # 1. Find the analysis by Database ID (not the uuid string)
-    analysis = Analysis.query.get_or_404(id)
-    
-    # 2. Security Check: Ensure current user owns this analysis
-    if analysis.user_id != session['user_id']:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
-    
-    # 3. Save the new name
-    analysis.custom_name = new_name
-    db.session.commit()
-    
-    return jsonify({'success': True})
+
 
 # Add this route to your app.py
 @app.route('/delete_analysis/<analysis_id>', methods=['POST'])
@@ -268,16 +322,11 @@ def profile():
     
     total_scans = len(user_analyses)
     total_trees = sum(a.total_count for a in user_analyses)
-    
-    badge = "New Planter 🪴"
-    if total_scans >= 50: badge = "Palm Master 🌴"
-    elif total_scans >= 20: badge = "Tree Expert 🌳"
-    elif total_scans >= 10: badge = "Sapling Scout 🌱"
 
     stats = {
         'total_scans': total_scans,
         'total_trees_counted': total_trees,
-        'badge': badge,
+        'badge': user.tier,
         'analyses': user_analyses[-5:],
         'account_type': 'Premium Member' if total_scans > 10 else 'Basic Member'
     }
@@ -384,6 +433,8 @@ def kl_time_filter(dt):
         return ""
     # Add 8 hours to the database UTC time
     return dt + timedelta(hours=8)
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5500)
