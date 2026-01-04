@@ -5,3 +5,4 @@ gunicorn
 Flask-Login
 pyrebase
 flask-cors
+psycopg2-binary
