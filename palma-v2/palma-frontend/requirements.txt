@@ -3,3 +3,5 @@ Flask-SQLAlchemy
 requests
 gunicorn
 Flask-Login
+pyrebase
+flask-cors
