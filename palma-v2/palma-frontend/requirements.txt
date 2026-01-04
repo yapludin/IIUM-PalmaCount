@@ -3,6 +3,6 @@ Flask-SQLAlchemy
 requests
 gunicorn
 Flask-Login
-pyrebase
+pyrebase4
 flask-cors
 psycopg2-binary
