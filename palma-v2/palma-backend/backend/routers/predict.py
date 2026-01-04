@@ -1,5 +1,5 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException
-from services.inference import run_inference
+from ..services.inference import run_inference
 import traceback
 import uuid
 from datetime import datetime
