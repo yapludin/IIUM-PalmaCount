@@ -218,7 +218,7 @@ def upload():
         try:
             with open(temp_path, 'rb') as f:
                 files = {'image': (file.filename, f, file.mimetype)}
-                response = requests.post(FASTAPI_URL, files=files, timeout=60) # Add timeout
+                response = requests.post(FASTAPI_URL, files=files, timeout=120) # Match Gunicorn timeout
             
             os.remove(temp_path)
             
