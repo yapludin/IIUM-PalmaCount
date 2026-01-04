@@ -1,16 +1,17 @@
 services:
   - type: web
     name: palma-frontend
+    rootDir: palma-v2
     runtime: python
     region: singapore
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    buildCommand: pip install -r palma-frontend/requirements.txt
+    startCommand: cd palma-frontend && gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: FASTAPI_URL
-        value: https://your-backend-url.onrender.com/api/predict
+        value: https://palma-backend-0ii7.onrender.com/api/predict
         sync: false
     databases:
       - name: palma_db
