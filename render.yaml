@@ -1,12 +1,11 @@
 services:
   - type: web
     name: palma-frontend
-    rootDir: palma-v2
     runtime: python
     region: singapore
     plan: free
-    buildCommand: pip install -r palma-frontend/requirements.txt
-    startCommand: cd palma-frontend && gunicorn app:app
+    buildCommand: pip install -r palma-v2/palma-frontend/requirements.txt
+    startCommand: gunicorn --chdir palma-v2/palma-frontend app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
