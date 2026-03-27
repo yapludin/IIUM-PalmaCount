@@ -1,123 +1,302 @@
 {% extends "layout.html" %}
+
 {% block content %}
 {% set title = "History | PalmaCount" %}
 
-<div class="min-h-screen bg-neutral-50 py-10 px-4">
+<!-- Animation Styles -->
+<style>
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fadeInUp {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  .delay-100 {
+    animation-delay: 0.1s;
+  }
+
+  .delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .glass-stat {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+  }
+</style>
+
+<div class="min-h-screen bg-gray-50/50 py-12 px-6 font-sans">
   <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="mb-10">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+
+    <!-- Toast Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-10 space-y-3 animate-fadeInUp">
+      {% for category, message in messages %}
+      <div
+        class="px-5 py-4 rounded-2xl text-sm font-bold flex items-center shadow-sm border border-transparent
+               {% if category == 'success' %}bg-emerald-50 text-emerald-800 border-emerald-100{% else %}bg-red-50 text-red-800 border-red-100{% endif %}">
+        {% if category == 'success' %}
+        <svg class="w-5 h-5 mr-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {% else %}
+        <svg class="w-5 h-5 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {% endif %}
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="mb-12 animate-fadeInUp">
+      <!-- Header Section -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
-          <h1 class="text-4xl font-bold text-green-800 mb-2">Analysis History</h1>
-          <p class="text-gray-600">View all your previous image analyses. Click on any card to see detailed results.</p>
+          <h1 class="text-4xl font-black text-gray-900 tracking-tight mb-2">Analysis History</h1>
+          <p class="text-gray-500 font-medium">Archive of your past palm counting reports.</p>
         </div>
-        <a href="{{ url_for('upload') }}" 
-           class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-700 text-white font-semibold rounded-xl shadow hover:shadow-lg transition duration-300 whitespace-nowrap">
-          + New Analysis
+        <a href="{{ url_for('upload') }}"
+          class="group inline-flex items-center justify-center px-6 py-3 bg-black text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-gray-900 transition-all duration-300 transform hover:-translate-y-0.5">
+          <svg class="w-5 h-5 mr-2 text-emerald-400 group-hover:rotate-90 transition-transform" fill="none"
+            stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          New Analysis
         </a>
       </div>
-      
-      <!-- Stats -->
+
+      <!-- Stats Overview -->
       {% if analyses %}
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500 mb-1">Total Analyses</p>
-          <p class="text-3xl font-bold text-green-700">{{ analyses|length }}</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeInUp delay-100">
+        <!-- Total Scans -->
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-5">
+          <div class="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
+            <img src="{{ url_for('static', filename='images/scan.png') }}" class="w-6 h-6 object-contain opacity-60">
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total Scans</p>
+            <p class="text-3xl font-black text-gray-900">{{ analyses|length }}</p>
+          </div>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500 mb-1">Most Recent</p>
-          <p class="text-lg font-semibold text-gray-800">
-            {{ analyses[0].created_at.strftime('%b %d, %Y') if analyses else 'N/A' }}
-          </p>
+
+        <!-- Total Trees -->
+        <div
+          class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm flex items-center gap-5 relative overflow-hidden">
+          <div class="absolute right-0 top-0 opacity-10 -mr-4 -mt-4 transform rotate-12">
+
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-emerald-600 shadow-sm z-10">
+            <img src="{{ url_for('static', filename='images/treeicon.png') }}" class="w-7 h-7 object-contain">
+          </div>
+          <div class="z-10">
+            <p class="text-xs font-bold text-emerald-700/60 uppercase tracking-widest mb-0.5">Trees Identified</p>
+            <p class="text-3xl font-black text-emerald-800">{{ analyses|sum(attribute='tree_count') }}</p>
+          </div>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500 mb-1">Total Trees Counted</p>
-          <p class="text-3xl font-bold text-green-700">
-            {{ analyses|sum(attribute='total_count') if analyses else 0 }}
-          </p>
+
+        <!-- Last Activity -->
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-5">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">Last Activity</p>
+            <p class="text-lg font-bold text-gray-900">
+              {{ (analyses[0].created_at|kl_time).strftime('%d %b %Y') if analyses else 'N/A' }}
+            </p>
+            <p class="text-[10px] font-mono text-gray-400">{{ (analyses[0].created_at|kl_time).strftime('%I:%M %p') if
+              analyses else '' }}</p>
+          </div>
         </div>
       </div>
       {% endif %}
     </div>
 
+    <!-- Masonry Grid of Analyses -->
     {% if analyses %}
-      <!-- Analyses Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for analysis in analyses %}
-        <a href="{{ url_for('analysis_detail', analysis_id=analysis.analysis_id) }}" 
-           class="group bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-          
-          <!-- Image with timestamp overlay -->
-          <div class="h-48 overflow-hidden relative">
-            <img src="{{ url_for('static', filename='processed/' + analysis.processed_filename) }}" 
-                 alt="{{ analysis.original_filename }}"
-                 class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-            <div class="absolute top-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
-              {{ analysis.created_at.strftime('%b %d') }}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fadeInUp delay-200">
+      {% for analysis in analyses %}
+
+      <div
+        class="group bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-2xl hover:shadow-gray-200/50 hover:border-emerald-500/30 transition-all duration-300 flex flex-col overflow-hidden relative">
+
+        <!-- Delete Button (Top Right) -->
+        <button
+          onclick="openDeleteModal('{{ analysis.analysis_id }}', '{{ analysis.custom_name or analysis.original_filename }}')"
+          class="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/80 backdrop-blur-md text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100"
+          title="Delete Record">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+
+        <!-- Main Clickable Area -->
+        <a href="{{ url_for('analysis_detail', analysis_id=analysis['id']) }}"
+          class="group block bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100">
+
+          <!-- Image Preview -->
+          <div class="relative h-64 overflow-hidden bg-gray-100">
+            {% if analysis.processed_filename.startswith('http') %}
+            <img src="{{ analysis.processed_filename }}" alt="{{ analysis.original_filename }}"
+              class="w-full h-full object-cover grayscale-[10%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700">
+            {% else %}
+            <img src="{{ url_for('static', filename='processed/' + analysis.processed_filename) }}"
+              alt="{{ analysis.original_filename }}"
+              class="w-full h-full object-cover grayscale-[10%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700">
+            {% endif %}
+
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity">
+            </div>
+
+            <!-- Overlay Info -->
+            <div class="absolute bottom-5 left-5 right-5 text-white">
+              <div
+                class="px-3 py-1 bg-emerald-100 text-emerald-800 text-[10px] uppercase font-bold tracking-wider rounded-full">
+                {{ (100 * analysis['confidence_score'])|round(1) }}% Confidence
+              </div>
+              <h3 class="font-bold text-xl leading-tight truncate drop-shadow-md"
+                title="{{ analysis.custom_name or analysis.original_filename }}">
+                {{ analysis.custom_name or analysis.original_filename }}
+              </h3>
             </div>
           </div>
-          
-          <!-- Content -->
-          <div class="p-5">
-            <div class="flex justify-between items-start mb-3">
-              <div class="flex-1 min-w-0">
-                <h3 class="font-semibold text-gray-800 text-lg truncate mb-1">{{ analysis.original_filename }}</h3>
-                <p class="text-xs text-gray-500 truncate">{{ analysis.analysis_id }}</p>
+
+          <!-- Card Body -->
+          <div class="p-6 flex flex-col flex-1 bg-white relative">
+
+            <!-- Tag Stats -->
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-3">
+                <div class="text-center px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                  <span class="block text-[10px] font-bold text-gray-400 uppercase">Mature</span>
+                  <span class="block text-sm font-black text-gray-700">{{ analysis.mature_count }}</span>
+                </div>
+                <div class="text-center px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                  <span class="block text-[10px] font-bold text-gray-400 uppercase">Young</span>
+                  <span class="block text-sm font-black text-gray-700">{{ analysis.young_count }}</span>
+                </div>
               </div>
-              <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full ml-2 flex-shrink-0">
-                {{ analysis.created_at.strftime('%I:%M %p') }}
+
+              <div class="text-right">
+                <span class="block text-[10px] font-bold text-emerald-600 uppercase mb-0.5">Total Palms</span>
+                <span class="block text-2xl font-black text-gray-900 leading-none">{{ analysis.tree_count }}</span>
+              </div>
+            </div>
+
+            <div
+              class="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between text-xs font-bold text-gray-400 group-hover:text-emerald-700 transition-colors">
+              <span class="font-mono">ID: #{{ analysis.analysis_id[-6:] }}</span>
+              <span class="flex items-center gap-1">
+                View Report <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
               </span>
             </div>
-            
-            <!-- Stats -->
-            <div class="grid grid-cols-3 gap-2 mt-4">
-              <div class="text-center p-2 bg-green-50 rounded-lg">
-                <p class="text-xs text-green-700 font-medium">Mature</p>
-                <p class="text-xl font-bold text-green-800">{{ analysis.mature_count }}</p>
-              </div>
-              <div class="text-center p-2 bg-blue-50 rounded-lg">
-                <p class="text-xs text-blue-700 font-medium">Young</p>
-                <p class="text-xl font-bold text-blue-800">{{ analysis.young_count }}</p>
-              </div>
-              <div class="text-center p-2 bg-emerald-100 rounded-lg">
-                <p class="text-xs text-emerald-900 font-medium">Total</p>
-                <p class="text-xl font-bold text-emerald-900">{{ analysis.total_count }}</p>
-              </div>
-            </div>
-            
-            <!-- View Button -->
-            <div class="mt-4 pt-4 border-t border-gray-100">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">View Details</span>
-                <span class="text-green-600 group-hover:text-green-800 transition">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                  </svg>
-                </span>
-              </div>
-            </div>
           </div>
         </a>
-        {% endfor %}
       </div>
-      
+      {% endfor %}
+    </div>
+
     {% else %}
-      <!-- Empty State -->
-      <div class="text-center py-20">
-        <div class="w-24 h-24 mx-auto mb-6 text-gray-300">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-        </div>
-        <h3 class="text-2xl font-semibold text-gray-700 mb-2">No analyses yet</h3>
-        <p class="text-gray-500 mb-8">Upload and analyze your first image to see it here.</p>
-        <a href="{{ url_for('upload') }}" 
-           class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-green-700 text-white font-semibold rounded-xl shadow hover:shadow-lg transition duration-300 inline-block">
-          Start Your First Analysis
-        </a>
+    <!-- Empty State -->
+    <div class="max-w-md mx-auto py-24 text-center animate-fadeInUp delay-100">
+      <div
+        class="inline-flex p-8 bg-white rounded-3xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] mb-8 border border-gray-100">
+        <svg class="w-16 h-16 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+          </path>
+        </svg>
       </div>
+      <h3 class="text-2xl font-black text-gray-900 mb-2">No analyses recorded</h3>
+      <p class="text-gray-500 mb-8 leading-relaxed">It looks quiet here. Upload your first aerial image to start
+        generating plantation insights.</p>
+      <a href="{{ url_for('upload') }}"
+        class="inline-flex items-center px-8 py-3.5 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:scale-105 transition-all duration-300">
+        Start First Scan
+      </a>
+    </div>
     {% endif %}
   </div>
 </div>
+
+<!-- Modern Delete Modal -->
+<div id="delete-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog"
+  aria-modal="true">
+  <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onclick="closeDeleteModal()"></div>
+
+  <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+    <div
+      class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-sm border border-gray-100">
+      <div class="p-8 text-center">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 mb-6">
+          <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </div>
+        <h3 class="text-xl font-black text-gray-900 mb-2">Delete Analysis?</h3>
+        <p class="text-sm text-gray-500 leading-relaxed mb-8">
+          Are you sure you want to delete <span id="delete-filename" class="font-bold text-gray-800"></span>?
+          This action cannot be undone.
+        </p>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button type="button"
+            class="w-full py-3 text-sm font-bold text-gray-500 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+            onclick="closeDeleteModal()">
+            Cancel
+          </button>
+          <form id="delete-form" method="POST" action="">
+            <button type="submit"
+              class="w-full py-3 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5">
+              Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDeleteModal(analysisId, filename) {
+    const modal = document.getElementById('delete-modal');
+    modal.classList.remove('hidden');
+    document.getElementById('delete-filename').textContent = '"' + filename + '"';
+    const form = document.getElementById('delete-form');
+    form.action = "{{ url_for('delete_analysis', analysis_id='PLACEHOLDER') }}".replace('PLACEHOLDER', analysisId);
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.add('hidden');
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === "Escape") closeDeleteModal();
+  });
+</script>
 
 {% endblock %}

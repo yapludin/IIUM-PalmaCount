@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>{{ title }}</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 
   <script>
@@ -21,119 +21,145 @@
   </script>
 </head>
 
-<body class="bg-neutral-100">
+<body class="bg-transparent">
+  {% set current = request.path %}
 
-{% set current = request.path %}
+  {% if request.endpoint not in ['login', 'register'] %}
+  <nav class="fixed top-4 left-1/2 -translate-x-1/2 z-[999]
+         w-[95%] max-w-6xl
+         rounded-2xl
+         border border-white/30
+         bg-white/70
+         backdrop-blur-xl
+         shadow-sm
+         supports-[backdrop-filter]:bg-white/30
+         hover:shadow-emerald-200/40
+         transition-shadow duration-300">
 
-{% if request.endpoint not in ['login', 'register'] %}
-<nav class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg border border-stone-200">
-  <div class="px-9">
-    <div class="flex items-center justify-between h-16">
+    <div class="px-9">
+      <div class="flex items-center justify-between h-16">
 
-      <a href="/" class="flex items-center space-x-2">
-        <img class="h-8 w-auto" src="{{ url_for('static', filename='images/palmaLogo.svg') }}" alt="PalmaCount Logo">
-        <span class="text-lg font-semibold text-emerald-700">PalmaCount</span>
-      </a>
-
-      <div class="hidden sm:flex items-center space-x-4">
-
-        <a href="/" class="px-4 py-2 text-sm font-bold rounded-xl transition
-           {% if current == '/' %}text-emerald-800{% else %}text-gray-800 hover:bg-neutral-300 hover:text-emerald-700{% endif %}">
-          Home
+        <!-- Logo -->
+        <a href="/" class="flex items-center space-x-2">
+          <img class="h-8 w-auto" src="{{ url_for('static', filename='images/palmaLogo.svg') }}" alt="PalmaCount Logo">
+          <span class="text-lg font-semibold text-emerald-700">PalmaCount</span>
         </a>
 
-        <a href="/upload" class="px-4 py-2 text-sm rounded-xl transition
-           {% if current == '/upload' %}text-emerald-800{% else %}text-gray-800 hover:bg-neutral-300 hover:text-emerald-700{% endif %}">
-          Upload
-        </a>
+        <!-- Links -->
+        <div class="hidden sm:flex items-center space-x-4">
 
-        <a href="/history" class="px-4 py-2 text-sm rounded-xl transition
-           {% if current == '/history' %}text-emerald-800{% else %}text-gray-800 hover:bg-neutral-300 hover:text-emerald-700{% endif %}">
-          Recents
-        </a>
-
-        <a href="/about" class="px-4 py-2 text-sm rounded-xl transition
-           {% if current == '/about' %}text-emerald-800{% else %}text-gray-800 hover:bg-neutral-300 hover:text-emerald-700{% endif %}">
-          About Us
-        </a>
-
-        {% if user %}
-        <div class="relative group ml-4">
-          <a href="{{ url_for('profile') }}" class="block">
-            <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold cursor-pointer hover:bg-emerald-700 transition-all shadow-sm ring-2 ring-emerald-100">
-              {# Use . notation to access the email property from the SQLite object #}
-              {{ user.name[0] | upper }}
-            </div>
+          <a href="/"
+            class="px-4 py-2 text-sm font-bold rounded-xl transition
+           {% if current == '/' %}text-emerald-800{% else %}text-gray-800 hover:bg-neutral-300/50 hover:text-emerald-700{% endif %}">
+            Home
           </a>
 
-          <div class="absolute right-0 mt-2 w-32 bg-white shadow-xl rounded-xl opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-200 border border-gray-100 overflow-hidden">
-            <a href="{{ url_for('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50">
-              My Profile
-            </a>
-            <hr class="border-gray-100">
-            <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">
-              Logout
-            </a>
-          </div>
-        </div>
-        {% else %}
-        <a href="/login" class="px-4 py-2 text-sm font-medium bg-emerald-700 text-white rounded-xl hover:bg-emerald-800 transition">
-          Log In
-        </a>
-        {% endif %}
+          <a href="/upload"
+            class="px-4 py-2 text-sm rounded-xl transition
+           {% if current == '/upload' %}text-emerald-800{% else %}text-gray-800 hover:bg-neutral-300/50 hover:text-emerald-700{% endif %}">
+            Upload
+          </a>
 
+          <a href="/history"
+            class="px-4 py-2 text-sm rounded-xl transition
+           {% if current == '/history' %}text-emerald-800{% else %}text-gray-800 hover:bg-neutral-300/50 hover:text-emerald-700{% endif %}">
+            Recents
+          </a>
+
+          <a href="/about"
+            class="px-4 py-2 text-sm rounded-xl transition
+           {% if current == '/about' %}text-emerald-800{% else %}text-gray-800 hover:bg-neutral-300/50 hover:text-emerald-700{% endif %}">
+            About Us
+          </a>
+
+          {% if user %}
+          <div class="relative group ml-4">
+            <a href="{{ url_for('profile') }}" class="block">
+
+              {% if user.profile_pic %}
+              <img src="{{ user.profile_pic }}"
+                class="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm hover:ring-2 hover:ring-emerald-500 transition-all">
+              {% else %}
+              <div
+                class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold cursor-pointer hover:bg-emerald-700 transition-all shadow-sm ring-2 ring-emerald-100">
+                {{ user.fullname[0] | upper }}
+              </div>
+              {% endif %}
+            </a>
+
+            <div class="absolute right-0 mt-2 w-32 bg-white/90 backdrop-blur shadow-xl rounded-xl
+                      opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                      transition-all duration-200 border border-gray-100 overflow-hidden">
+              <a href="{{ url_for('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50">
+                My Profile
+              </a>
+              <hr class="border-gray-100">
+              <a href="{{ url_for('logout') }}"
+                class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">
+                Logout
+              </a>
+            </div>
+          </div>
+          {% else %}
+          <a href="/login"
+            class="px-4 py-2 text-sm font-medium bg-emerald-700 text-white rounded-xl hover:bg-emerald-800 transition">
+            Log In
+          </a>
+          {% endif %}
+        </div>
       </div>
     </div>
-  </div>
-</nav>
-{% endif %}
+  </nav>
+  {% endif %}
 
-<div class="pt-28">
+  <!-- Page spacing so content doesn't go under navbar -->
+  <div class="pt-28">
     {% block content %}{% endblock %}
-</div>
-
-<footer class="bg-zinc-100 text-gray-700 py-20 mt-20 relative border-t border-gray-200">
-  <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
-    
-    <div>
-      <h3 class="text-2xl font-bold text-gray-900 mb-2">PalmaCount</h3>
-      <p class="text-sm text-gray-500">Precision AI for Palm Plantations</p>
-    </div>
-
-    <div>
-      <h4 class="font-semibold mb-4 text-gray-900">Navigation</h4>
-      <ul class="space-y-2 text-sm">
-        <li><a href="/about" class="hover:text-emerald-700 transition">About</a></li>
-        <li><a href="#why-palmacount" class="hover:text-emerald-700 transition">Features</a></li>
-        <li><a href="/upload" class="hover:text-emerald-700 transition">Start Counting</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <h4 class="font-semibold mb-4 text-gray-900">Support</h4>
-      <ul class="space-y-2 text-sm">
-        <li><a href="#" class="hover:text-emerald-700 transition">Documentation</a></li>
-        <li><a href="#" class="hover:text-emerald-700 transition">FAQ</a></li>
-        <li><a href="#" class="hover:text-emerald-700 transition">Contact Support</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <h4 class="font-semibold mb-4 text-gray-900">Follow Us</h4>
-      <ul class="space-y-2 text-sm">
-        <li><a href="#" class="hover:text-emerald-700 transition">LinkedIn</a></li>
-        <li><a href="#" class="hover:text-emerald-700 transition">YouTube</a></li>
-      </ul>
-    </div>
-
   </div>
 
-  <div class="mt-12 border-t border-gray-200 pt-6 text-sm text-gray-400 text-center">
-    © 2025 PalmaCount. All rights reserved. &nbsp;
-    <a href="#" class="hover:text-gray-900">Privacy Policy</a> | 
-    <a href="#" class="hover:text-gray-900">Terms of Use</a>
-  </div>
-</footer>
+  <footer class="bg-zinc-100 text-gray-700 py-20 mt-20 relative border-t border-gray-200">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+
+      <div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">PalmaCount</h3>
+        <p class="text-sm text-gray-500">Precision AI for Palm Plantations</p>
+      </div>
+
+      <div>
+        <h4 class="font-semibold mb-4 text-gray-900">Navigation</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/about" class="hover:text-emerald-700 transition">About</a></li>
+          <li><a href="#why-palmacount" class="hover:text-emerald-700 transition">Features</a></li>
+          <li><a href="/upload" class="hover:text-emerald-700 transition">Start Counting</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-semibold mb-4 text-gray-900">Support</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#" class="hover:text-emerald-700 transition">Documentation</a></li>
+          <li><a href="#" class="hover:text-emerald-700 transition">FAQ</a></li>
+          <li><a href="#" class="hover:text-emerald-700 transition">Contact Support</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-semibold mb-4 text-gray-900">Follow Us</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#" class="hover:text-emerald-700 transition">LinkedIn</a></li>
+          <li><a href="#" class="hover:text-emerald-700 transition">YouTube</a></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="mt-12 border-t border-gray-200 pt-6 text-sm text-gray-400 text-center">
+      © 2025 PalmaCount. All rights reserved. &nbsp;
+      <a href="#" class="hover:text-gray-900">Privacy Policy</a> |
+      <a href="#" class="hover:text-gray-900">Terms of Use</a>
+    </div>
+  </footer>
 
 </body>
+
 </html>

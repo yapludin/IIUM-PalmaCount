@@ -1,4 +1,7 @@
-flask
-gunicorn
+Flask
+pydantic
 requests
-Flask-SQLAlchemy
+werkzeug
+firebase-admin
+gunicorn
+Flask-Login

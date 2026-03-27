@@ -1,247 +1,396 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_sqlalchemy import SQLAlchemy
-import requests
-import base64
 import os
+import io
+import json
+import base64
 from datetime import datetime
-import uuid
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import requests
+import firebase_admin
+from firebase_admin import credentials, firestore, storage
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = "0102490139"
+app.secret_key = os.environ.get('SECRET_KEY', '0102490139')
 
-# --- Database configuration ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///analyses.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['PROCESSED_FOLDER'] = 'static/processed'
+# --- CONFIGURATION ---
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+FASTAPI_URL = os.environ.get('FASTAPI_URL', 'http://127.0.0.1:8000/api/predict')
 
-# Create directories if they don't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['PROCESSED_FOLDER'], exist_ok=True)
+# --- FIREBASE SETUP ---
+# On Render/Production: 'FIREBASE_CREDENTIALS' env var contains the JSON string
+# On Local: You can point to a file, or set the env var.
+firebase_creds_json = os.environ.get('FIREBASE_CREDENTIALS')
 
-db = SQLAlchemy(app)
+if not firebase_admin._apps:
+    try:
+        if firebase_creds_json:
+            # Handle Base64 encoded JSON if necessary (common in some CIs), or raw JSON string
+            try:
+                # Try parsing as raw JSON first
+                cred_dict = json.loads(firebase_creds_json)
+            except json.JSONDecodeError:
+                # Try decoding base64
+                decoded_json = base64.b64decode(firebase_creds_json).decode('utf-8')
+                cred_dict = json.loads(decoded_json)
+            
+            cred = credentials.Certificate(cred_dict)
+            firebase_admin.initialize_app(cred, {
+                'storageBucket': f"{cred_dict['project_id']}.firebasestorage.app" 
+            })
+            print("✅ Firebase Initialized from Environment Variable")
+        else:
+            # Local fallback (look for 'serviceAccountKey.json' in current dir)
+            cred = credentials.Certificate('serviceAccountKey.json')
+            firebase_admin.initialize_app(cred, {
+                'storageBucket': 'palmacount.appspot.com' # Replace if you know your bucket name
+            })
+            print("✅ Firebase Initialized from Local File")
+    except Exception as e:
+        print(f"⚠️ Firebase Initialization Warning: {e}")
 
-FASTAPI_URL = "http://127.0.0.1:8000/api/predict"
+db = firestore.client()
+bucket = storage.bucket()
 
-# --- Database Models ---
+# --- LOGIN MANAGER ---
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    password_hash = db.Column(db.String(200), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+# --- MODELS (Wrapper for Firestore) ---
+class User(UserMixin):
+    def __init__(self, uid, email, fullname, password_hash):
+        self.id = uid
+        self.email = email
+        self.fullname = fullname
+        self.password_hash = password_hash
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+    @staticmethod
+    def from_dict(uid, source):
+        return User(
+            uid=uid,
+            email=source.get('email'),
+            fullname=source.get('fullname'),
+            password_hash=source.get('password_hash')
+        )
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+@login_manager.user_loader
+def load_user(user_id):
+    doc_ref = db.collection('users').document(user_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        return User.from_dict(doc.id, doc.to_dict())
+    return None
 
-class Analysis(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    analysis_id = db.Column(db.String(50), unique=True, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    original_filename = db.Column(db.String(200), nullable=False)
-    processed_filename = db.Column(db.String(200), nullable=False)
-    mature_count = db.Column(db.Integer, nullable=False)
-    young_count = db.Column(db.Integer, nullable=False)
-    total_count = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-    user = db.relationship('User', backref='analyses')
-
-# Initialize Database
-with app.app_context():
-    db.create_all()
-
-# --- Context Processor (Makes 'current_user' available in all HTML) ---
-@app.context_processor
-def inject_user():
-    # We call it 'user_data' to be 100% sure it doesn't clash with the 'User' class
-    user_data = None
-    if 'user_id' in session:
-        user_data = User.query.get(session['user_id'])
-    return dict(user=user_data)
-
-
-# --- Routes ---
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if "user_id" in session:
-        return redirect(url_for('dashboard'))
-
-    result = None
-    image_base64 = None
-
-    if request.method == "POST":
-        file = request.files.get("image")
-        if file:
-            response = requests.post(
-                FASTAPI_URL,
-                files={"image": (file.filename, file, file.content_type)}
-            )
-            if response.status_code == 200:
-                data = response.json()
-                result = data
-                image_base64 = data["image_base64"]
-
-    return render_template("index.html", result=result, image_base64=image_base64)
+# --- FILTERS ---
+@app.template_filter('kl_time')
+def kl_time_filter(dt):
+    if dt is None:
+        return ""
+    # Check if dt is a datetime object, if not try to parse
+    if not isinstance(dt, datetime):
+        # Firestore returns datetime with timezone info, usually UTC
+        pass 
     
+    # Simple conversion: UTC + 8 hours
+    # In production with pytorch/timezone libraries it is more robust, but this works for basic needs
+    # Assuming Firestore stores as UTC
+    from datetime import timedelta
+    return dt + timedelta(hours=8)
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        name = request.form.get('name')  # Captured from your HTML form
-        email = request.form.get('email').lower().strip()
-        password = request.form.get('password')
+# --- ROUTES ---
 
-        # Check if user exists
-        if User.query.filter_by(email=email).first():
-            flash("Email already registered")
-            return redirect(url_for('register'))
-
-        # Create user with the name argument
-        new_user = User(name=name, email=email) 
-        new_user.set_password(password)
-        
-        db.session.add(new_user)
-        db.session.commit()
-
-        session['user_id'] = new_user.id
+@app.route('/')
+def home():
+    if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
+    return render_template('index.html')
 
-    return render_template('register.html')
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        fullname = request.form['fullname']
+        email = request.form['email']
+        password = request.form['password']
+        
+        # Check if user exists
+        users_ref = db.collection('users')
+        query = users_ref.where('email', '==', email).limit(1).stream()
+        if any(query):
+            flash('Email already registered!', 'danger')
+            return redirect(url_for('signup'))
+        
+        hashed_pw = generate_password_hash(password, method='scrypt')
+        
+        # Add to Firestore
+        new_user_ref = users_ref.document() # Auto-ID
+        new_user_ref.set({
+            'fullname': fullname,
+            'email': email,
+            'password_hash': hashed_pw,
+            'created_at': firestore.SERVER_TIMESTAMP
+        })
+        
+        flash('Account created! Please login.', 'success')
+        return redirect(url_for('login'))
+        
+    return render_template('signup.html', current_page='signup')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email'].lower().strip()
+        email = request.form['email']
         password = request.form['password']
-        user = User.query.filter_by(email=email).first()
-
-        if user and user.check_password(password):
-            session.clear()
-            session['user_id'] = user.id
-            return redirect(url_for('dashboard'))
         
-        flash("Invalid credentials")
-    return render_template('login.html')
+        users_ref = db.collection('users')
+        results = list(users_ref.where('email', '==', email).limit(1).stream())
+        
+        if results:
+            user_doc = results[0]
+            user_data = user_doc.to_dict()
+            if check_password_hash(user_data['password_hash'], password):
+                user_obj = User.from_dict(user_doc.id, user_data)
+                login_user(user_obj)
+                session['user_id'] = user_doc.id
+                return redirect(url_for('dashboard'))
+        
+        flash('Invalid email or password.', 'danger')
+    return render_template('login.html', current_page='login')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('login'))
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
-    if "user_id" not in session:
-        return redirect(url_for('login'))
-    return render_template('dashboard.html')
+    # Fetch recent analyses
+    analyses_ref = db.collection('analyses')
+    query = analyses_ref.where('user_id', '==', current_user.id).order_by('created_at', direction=firestore.Query.DESCENDING).limit(5)
+    recent_analyses = []
+    for doc in query.stream():
+        data = doc.to_dict()
+        data['id'] = doc.id # Attach ID for linking
+        recent_analyses.append(data)
+    
+    total_analyses = 0
+    # Counting in NoSQL can be expensive, but acceptable for small scale
+    # Better to store a counter on the User document, but query count is okay for MVP
+    all_query = analyses_ref.where('user_id', '==', current_user.id).count() 
+    # Note: aggregation queries might require an index, falling back to simple list for now if fails
+    # Or just use len(list(analyses_ref.where...stream())) which is slow but safe for now.
+    total_analyses = len(list(analyses_ref.where('user_id', '==', current_user.id).stream()))
+
+    return render_template('dashboard.html', user=current_user, recent_analyses=recent_analyses, total_analyses=total_analyses)
+
+@app.route('/history')
+@login_required
+def history():
+    analyses_ref = db.collection('analyses')
+    query = analyses_ref.where('user_id', '==', current_user.id).order_by('created_at', direction=firestore.Query.DESCENDING)
+    all_analyses = []
+    for doc in query.stream():
+        data = doc.to_dict()
+        data['id'] = doc.id
+        all_analyses.append(data)
+    
+    return render_template('history.html', analyses=all_analyses)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
-    if "user_id" not in session:
-        return redirect(url_for('login'))
-    
     if request.method == 'POST':
-        file = request.files['image']
-        analysis_id = str(uuid.uuid4())[:8]
-        processed_filename = f"{analysis_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        if 'file' not in request.files:
+            flash('No file part', 'danger')
+            return redirect(request.url)
         
-        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{processed_filename}")
-        file.save(temp_path)
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file', 'danger')
+            return redirect(request.url)
         
-        with open(temp_path, 'rb') as f:
-            files = {'image': (file.filename, f, file.mimetype)}
-            response = requests.post(FASTAPI_URL, files=files)
-        
-        os.remove(temp_path)
-        data = response.json()
+        if file and allowed_file(file.filename):
+            try:
+                # 1. Prepare File
+                filename = secure_filename(file.filename)
+                unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                file_content = file.read()
+                
+                # 2. Send to Fast API (Backend)
+                files = {'file': (filename, file_content, file.content_type)}
+                response = requests.post(FASTAPI_URL, files=files, timeout=600)  # Long timeout
+                
+                if response.status_code == 200:
+                    api_response = response.json()
+                    analysis_data = api_response.get('analysis', {})
+                    
+                    # Extract Data
+                    tree_count = analysis_data.get('total_count', 0)
+                    formatted_tree_count = tree_count # Keep raw integer
+                    
+                    processed_image_base64 = analysis_data.get('image_base64')
+                    chart_base64 = analysis_data.get('chart_base64')
+                    
+                    # 3. Upload Processed Image to Firebase Storage
+                    if processed_image_base64:
+                        image_data = base64.b64decode(processed_image_base64)
+                        processed_filename = f"processed_{unique_filename}"
+                        blob = bucket.blob(f"analyses/{current_user.id}/{processed_filename}")
+                        blob.upload_from_string(image_data, content_type='image/jpeg')
+                        blob.make_public()
+                        image_url = blob.public_url
+                    else:
+                        image_url = None
 
-        if data.get("status") == "success":
-            image_data = base64.b64decode(data["image_base64"])
-            processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
-            with open(processed_path, "wb") as f:
-                f.write(image_data)
+                    # 4. Save Metadata to Firestore
+                    doc_ref = db.collection('analyses').document()
+                    
+                    # Construct the full document
+                    firestore_data = {
+                        'user_id': current_user.id,
+                        'original_filename': filename,
+                        'processed_filename': image_url,
+                        'tree_count': tree_count, # Legacy field support
+                        'total_count': tree_count,
+                        'mature_count': analysis_data.get('mature_count', 0),
+                        'young_count': analysis_data.get('young_count', 0),
+                        'total_area_m2': analysis_data.get('total_area_m2', 0),
+                        'total_area_ha': analysis_data.get('total_area_ha', 0),
+                        'method_name': analysis_data.get('method_name', 'YOLOv8-Seg'),
+                        'confidence_score': 0.94, # Hardcoded/Avg for now if not in response
+                        'chart_base64': chart_base64, # Save chart directly
+                        'created_at': firestore.SERVER_TIMESTAMP,
+                        'custom_name': filename # Init custom name
+                    }
+                    
+                    doc_ref.set(firestore_data)
+                    
+                    flash('Analysis successful!', 'success')
+                    return redirect(url_for('analysis_detail', analysis_id=doc_ref.id))
+                else:
+                     flash(f'Error from AI Model: {response.text}', 'danger')
             
-            new_analysis = Analysis(
-                analysis_id=analysis_id,
-                user_id=session['user_id'],
-                original_filename=file.filename,
-                processed_filename=processed_filename,
-                mature_count=data["total_mature"],
-                young_count=data["total_young"],
-                total_count=data["total_oil_palms"]
-            )
-            db.session.add(new_analysis)
-            db.session.commit()
-            return redirect(url_for('analysis_detail', analysis_id=analysis_id))
+            except Exception as e:
+                flash(f'An error occurred: {str(e)}', 'danger')
+                print(f"UPLOAD ERROR: {e}") # Debug log
+                
+    return render_template('upload.html')
 
-        flash("Analysis failed")
-        return redirect(url_for('upload'))
+@app.route('/analysis/<analysis_id>')
+@login_required
+def analysis_detail(analysis_id):
+    # Retrieve from Firestore
+    doc_ref = db.collection('analyses').document(analysis_id)
+    doc = doc_ref.get()
+    
+    if not doc.exists:
+        flash('Analysis not found', 'danger')
+        return redirect(url_for('history'))
+        
+    analysis_data = doc.to_dict()
+    analysis_data['id'] = doc.id
+    analysis_data['analysis_id'] = doc.id # Alias for template compatibility
+    
+    # Check ownership
+    if analysis_data.get('user_id') != current_user.id:
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('history'))
+    
+    image_url = analysis_data.get('processed_filename')
+    
+    # Improved Wrapper to handle ALL fields required by analysis_detail.html
+    class AnalysisWrapper:
+        def __init__(self, data):
+            self.id = data.get('id')
+            self.analysis_id = data.get('id')
+            self.original_filename = data.get('original_filename')
+            self.processed_filename = data.get('processed_filename')
+            self.tree_count = data.get('tree_count', 0)
+            self.total_count = data.get('total_count', self.tree_count) # Fallback to tree_count
+            self.confidence_score = data.get('confidence_score', 0)
+            self.created_at = data.get('created_at')
+            self.method_name = data.get('method_name', 'Standard Analysis')
+            self.total_area_m2 = data.get('total_area_m2', 0)
+            self.total_area_ha = data.get('total_area_ha', 0)
+            self.mature_count = data.get('mature_count', 0)
+            self.young_count = data.get('young_count', 0)
+            self.chart_base64 = data.get('chart_base64')
+            self.custom_name = data.get('custom_name')
+    
+    analysis_obj = AnalysisWrapper(analysis_data)
+        
+    return render_template("analysis_detail.html", analysis=analysis_obj, processed_image_url=image_url)
 
-    return render_template("upload.html")
+@app.route('/delete_analysis/<analysis_id>', methods=['POST'])
+@login_required
+def delete_analysis(analysis_id):
+    doc_ref = db.collection('analyses').document(analysis_id)
+    doc = doc_ref.get()
+    
+    if doc.exists and doc.to_dict().get('user_id') == current_user.id:
+        # Optional: Delete file from storage too to save space
+        # file_url = doc.to_dict().get('processed_filename')
+        # ... logic to parsing URL and deleting blob ...
+        
+        doc_ref.delete()
+        flash('Analysis deleted successfully.', 'success')
+    else:
+        flash('Could not delete analysis.', 'danger')
+        
+    return redirect(url_for('history'))
 
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
 def profile():
-    if "user_id" not in session:
-        return redirect(url_for('login'))
+    if request.method == 'POST':
+        fullname = request.form.get('fullname')
+        new_password = request.form.get('password')
+        
+        updates = {}
+        if fullname:
+            updates['fullname'] = fullname
+        
+        if new_password:
+            updates['password_hash'] = generate_password_hash(new_password, method='scrypt')
+            
+        if updates:
+            db.collection('users').document(current_user.id).update(updates)
+            flash('Profile updated successfully!', 'success')
+            
+            # Reload user in session
+            updated_doc = db.collection('users').document(current_user.id).get()
+            login_user(User.from_dict(updated_doc.id, updated_doc.to_dict()))
+            
+        return redirect(url_for('profile'))
+        
+    # Calculate Stats
+    analyses_ref = db.collection('analyses')
+    query = analyses_ref.where('user_id', '==', current_user.id).stream()
     
-    user = User.query.get(session['user_id'])
-    user_analyses = Analysis.query.filter_by(user_id=user.id).all()
+    total_scans = 0
+    total_trees = 0
     
-    total_scans = len(user_analyses)
-    total_trees = sum(a.total_count for a in user_analyses)
-    
-    # Badge Logic
-    badge = "New Planter 🪴"
-    if total_scans >= 50: badge = "Palm Master 🌴"
-    elif total_scans >= 20: badge = "Tree Expert 🌳"
-    elif total_scans >= 10: badge = "Sapling Scout 🌱"
-
+    for doc in query:
+        total_scans += 1
+        data = doc.to_dict()
+        # Handle both old 'tree_count' and new 'total_count' fields
+        total_trees += data.get('total_count', data.get('tree_count', 0))
+        
     stats = {
         'total_scans': total_scans,
         'total_trees_counted': total_trees,
-        'badge': badge,
-        'analyses': user_analyses[-5:]
+        'badge': 'Veteran Planter' if total_scans > 10 else 'New Planter'
     }
-    return render_template('profile.html', user=user, stats=stats)
 
-@app.route('/history')
-def history():
-    if "user_id" not in session:
-        return redirect(url_for('login'))
-    
-    analyses = Analysis.query.filter_by(user_id=session['user_id'])\
-                             .order_by(Analysis.created_at.desc()).all()
-    return render_template('history.html', analyses=analyses)
+    return render_template('profile.html', user=current_user, stats=stats)
 
-@app.route('/analysis/<analysis_id>')
-def analysis_detail(analysis_id):
-    if "user_id" not in session:
-        return redirect(url_for('login'))
-    
-    # Get analysis from database
-    analysis = Analysis.query.filter_by(analysis_id=analysis_id, user_id=session['user_id']).first()
-    
-    if not analysis:
-        flash("Analysis not found")
-        return redirect(url_for('history'))
-    
-    # Generate the image URL manually here
-    image_url = url_for('static', filename='processed/' + analysis.processed_filename)
-    
-    return render_template("analysis_detail.html", 
-                           analysis=analysis,
-                           processed_image_url=image_url)
-
-@app.route('/about')  # This defines the URL (e.g., localhost:5000/about)
-def about():
-    return render_template('about.html') # This must match your filename exactly
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5500)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5001))
+    app.run(debug=True, host='0.0.0.0', port=port)

@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from .model_loader import model, class_names
+from .model_loader import get_model, class_names # Use lazy loader
 
 # --- SERVER CONFIGURATION ---
 # Set Matplotlib to non-interactive mode.
@@ -171,11 +171,31 @@ def run_inference(image_file):
     """
     # 1. Load image
     img = Image.open(image_file.file)
+    
+    # --- MEMORY OPTIMIZATION: Resize if too large ---
+    # Render Free Tier has 512MB RAM. Large images (4K+) cause OOM crashes.
+    # We limit max dimension to 1280px, which is sufficient for YOLOv8.
+    max_dimension = 1280
+    if img.width > max_dimension or img.height > max_dimension:
+        img.thumbnail((max_dimension, max_dimension))
+    
     img_array = np.array(img)
 
     # 2. Run YOLO prediction
     # verbose=False keeps the terminal clean
-    results = model.predict(img_array, verbose=False)
+    import torch
+    import gc
+
+    # Use no_grad to save memory (we are predicting, not training)
+    # Run inference with the loaded model
+    # Use the lazy loader here!
+    model = get_model()
+    with torch.no_grad():
+        results = model(img_array, verbose=False)
+    
+    # Explicitly clear CUDA cache if available (though Render uses CPU)
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # 3. Calculate Area using Research Method
     total_area_m2, tree_data, counters, method_name = calculate_area_research_based(
@@ -202,7 +222,7 @@ def run_inference(image_file):
 
     # --- RETURN DATA DICTIONARY ---
     # This dictionary is what gets sent back to the Frontend.
-    return {
+    response_data = {
         "counts": counters,
         "total_mature": total_mature,
         "total_young": total_young,
@@ -213,3 +233,13 @@ def run_inference(image_file):
         "image_base64": img_base64,
         "chart_base64": chart_base64
     }
+
+    # Force Garbage Collection to free up RAM for the next request
+    del results
+    del img_array
+    del annotated_image
+    del annotated_image_rgb
+    gc.collect()
+
+    return response_data
+
